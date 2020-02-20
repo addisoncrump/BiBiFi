@@ -1,23 +1,23 @@
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Program {
     pub principal: Principal,
     pub password: String,
     pub command: Command,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Principal {
     pub ident: Identifier,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Command {
     Exit,
     Return(Expr),
     Chain(PrimitiveCommand, Box<Command>),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum PrimitiveCommand {
     CreatePrincipal(CreatePrincipal),
     ChangePassword(ChangePassword),
@@ -30,38 +30,38 @@ pub enum PrimitiveCommand {
     DefaultDelegator(Principal),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct CreatePrincipal {
     pub principal: Principal,
     pub password: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct ChangePassword {
     pub principal: Principal,
     pub password: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Assignment {
     pub variable: Variable,
     pub expr: Expr,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Append {
     pub variable: Variable,
     pub expr: Expr,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct ForEach {
     pub value: Variable,
     pub list: Variable,
     pub expr: Expr,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Delegation {
     pub target: Target,
     pub delegator: Principal,
@@ -69,32 +69,32 @@ pub struct Delegation {
     pub delegated: Principal,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Expr {
     Value(Value),
     EmptyList,
     FieldVals(Vec<Assignment>),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Value {
     Variable(Variable),
     String(String),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Variable {
     Variable(Identifier),
     Member(Box<Variable>, Box<Variable>), // nested values possible, but not implemented
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Target {
     All,
     Variable(Variable),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Right {
     Read,
     Write,
@@ -102,7 +102,7 @@ pub enum Right {
     Delegate,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Identifier {
     pub name: String,
 }
@@ -217,3 +217,33 @@ peg::parser! {
 }
 
 pub use program_parser::program as parse;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::error::Error;
+
+    #[test]
+    fn basic() -> Result<(), Box<dyn Error>> {
+        let program = program_parser::program(
+            r#"as principal bob password "lmao" do
+                exit
+           ***"#,
+        )?;
+
+        assert_eq!(
+            program,
+            Program {
+                principal: Principal {
+                    ident: Identifier {
+                        name: "bob".to_string()
+                    }
+                },
+                password: "lmao".to_string(),
+                command: Command::Exit
+            }
+        );
+
+        Ok(())
+    }
+}
