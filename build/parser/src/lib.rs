@@ -27,7 +27,7 @@ peg::parser! {
                       | '.'
                       | '?'
                       | '!'
-                      | '-' ]*) "\"" { s.to_string() }
+                      | '-' ]*<0,65535>) "\"" { s.to_string() }
 
         rule command() -> Command
             = _ "exit" _ "\n" { Command::Exit }
@@ -40,7 +40,7 @@ peg::parser! {
                  [ 'A'..='Z'
                  | 'a'..='z'
                  | '0'..='9'
-                 | '_']*) { Identifier { name: s.to_string() } }
+                 | '_']*<0,254>) { Identifier { name: s.to_string() } }
 
         rule expr() -> Expr
             = v:value() { Expr::Value(v) }
