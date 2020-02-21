@@ -1,8 +1,13 @@
+use std::collections::{HashMap, HashSet};
+use std::ops::Not;
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Program {
     pub principal: Principal,
     pub password: String,
     pub command: Command,
+    pub principals: HashSet<Identifier>,
+    pub variables: HashMap<Identifier, Scope>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -102,7 +107,24 @@ pub enum Right {
     Delegate,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Copy)]
+pub enum Scope {
+    Local,
+    Global,
+}
+
+impl Not for Scope {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Scope::Local => Scope::Global,
+            Scope::Global => Scope::Local,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Debug)]
 pub struct Identifier {
     pub name: String,
 }

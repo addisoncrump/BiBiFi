@@ -1,4 +1,6 @@
 pub mod types;
+use std::collections::{HashMap, HashSet};
+use std::process::id;
 use types::*;
 
 peg::parser! {
@@ -8,7 +10,9 @@ peg::parser! {
                 Program {
                     principal: p,
                     password: s,
-                    command: cmd
+                    command: cmd,
+                    principals: HashSet::new(),
+                    variables: HashMap::new(),
                 }
             }
 
@@ -112,7 +116,95 @@ peg::parser! {
     }
 }
 
-pub use program_parser::program as parse;
+fn enrich(program: &mut Program) -> Result<(), Box<dyn std::error::Error>> {
+    fn safe_insert(
+        variables: &mut HashMap<Identifier, Scope>,
+        ident: &mut Identifier,
+        scope: Scope,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if variables.insert(ident.clone(), scope.clone()) == Some(!scope) {
+            return Err(Box::new(std::io::Error::from(
+                std::io::ErrorKind::InvalidData,
+            )));
+        }
+        Ok(())
+    }
+
+    let mut command = &mut program.command;
+    while let Command::Chain(prim, next) = command {
+        // TODO I need to lock member variables in exprs
+        command = &mut *next;
+        match prim {
+            PrimitiveCommand::CreatePrincipal(cp) => {
+                program.principals.insert(cp.principal.ident.clone());
+            }
+            PrimitiveCommand::ChangePassword(cp) => {
+                program.principals.insert(cp.principal.ident.clone());
+            }
+            PrimitiveCommand::Assignment(a) => {
+                if let Variable::Variable(ident) = &mut a.variable {
+                    safe_insert(&mut program.variables, ident, Scope::Global)?;
+                } else {
+                    panic!("Encountered a member variable in an assignment statement.");
+                }
+            }
+            PrimitiveCommand::Append(a) => {
+                if let Variable::Variable(ident) = &mut a.variable {
+                    if !program.variables.contains_key(ident) {
+                        // assert it's global
+                        safe_insert(&mut program.variables, ident, Scope::Global)?;
+                    }
+                } else {
+                    panic!("Encountered a member variable in an append statement.");
+                }
+            }
+            PrimitiveCommand::LocalAssignment(a) => {
+                if let Variable::Variable(ident) = &mut a.variable {
+                    safe_insert(&mut program.variables, ident, Scope::Local)?;
+                } else {
+                    panic!("Encountered a member variable in an assignment statement.");
+                }
+            }
+            PrimitiveCommand::ForEach(fe) => {
+                if let Variable::Variable(ident) = &mut fe.value {
+                    if program.variables.contains_key(ident) {
+                        return Err(Box::new(std::io::Error::from(
+                            std::io::ErrorKind::InvalidData,
+                        )));
+                    }
+                } else {
+                    panic!("Encountered a member variable as a iter value in a foreach statement.");
+                }
+                if let Variable::Variable(ident) = &mut fe.list {
+                    safe_insert(&mut program.variables, ident, Scope::Global)?;
+                } else {
+                    panic!("Encountered a member variable as a list in a foreach statement.");
+                }
+            }
+            PrimitiveCommand::SetDelegation(_) => {}
+            PrimitiveCommand::DeleteDelegation(_) => {}
+            PrimitiveCommand::DefaultDelegator(_) => {}
+        }
+    }
+
+    Ok(())
+}
+
+pub fn parse(program: &str) -> Result<Program, Box<dyn std::error::Error>> {
+    if program.len() > 1000000 || !program.is_ascii() {
+        Err(Box::new(std::io::Error::from(
+            std::io::ErrorKind::InvalidData,
+        )))
+    } else {
+        match program_parser::program(program) {
+            Ok(mut program) => {
+                enrich(&mut program)?;
+                Ok(program)
+            }
+            Err(e) => Err(Box::new(e)),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests;
