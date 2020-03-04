@@ -6,7 +6,7 @@ use types::*;
 peg::parser! {
     grammar program_parser() for str {
         pub rule program() -> Program
-            = _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ "\n" cmd:command() _ "***" {
+            = (comment() "\n")* _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ "\n" cmd:line() _ "***" ("\n" comment())* {
                 Program {
                     principal: p,
                     password: s,
@@ -33,10 +33,14 @@ peg::parser! {
                       | '!'
                       | '-' ]*<0,65535>) "\"" { s.to_string() }
 
+        rule line() -> Command
+            = c:command() { c }
+            / comment() "\n" l:line() { l }
+
         rule command() -> Command
-            = _ "exit" _ "\n" { Command::Exit }
-            / _ "return" __ e:expr() _ "\n" { Command::Return(e) }
-            / _ p:primitive_command() _ "\n" c:command() { Command::Chain(p, Box::new(c)) }
+            = _ "exit" _ (comment() _)? "\n" { Command::Exit }
+            / _ "return" __ e:expr() _ (comment() _)? "\n" { Command::Return(e) }
+            / _ p:primitive_command() _ (comment() _)? "\n" c:line() { Command::Chain(p, Box::new(c)) }
 
         rule identifier() -> Identifier
             = s:$(['A'..='Z'
@@ -94,8 +98,8 @@ peg::parser! {
                 }
 
         rule value() -> Value
-            = v:variable() { Value::Variable(v) }
-            / v:variable() _ "." _ f:variable() { Value::Variable(Variable::Member(Box::new(v), Box::new(f))) }
+            = v:variable() _ "." _ f:variable() { Value::Variable(Variable::Member(Box::new(v), Box::new(f))) }
+            / v:variable() { Value::Variable(v) }
             / s:string() { Value::String(s) }
 
         rule target() -> Target
@@ -113,6 +117,19 @@ peg::parser! {
 
         rule _() = quiet!{ " "* }
         rule __() = quiet!{ " "+ }
+        rule comment() = quiet!{ "//"
+                 [ 'A'..='Z'
+                 | 'a'..='z'
+                 | '0'..='9'
+                 | '_'
+                 | ' '
+                 | ','
+                 | ';'
+                 | '\\'
+                 | '.'
+                 | '?'
+                 | '!'
+                 | '-']*}
     }
 }
 
