@@ -4,7 +4,7 @@ use types::*;
 peg::parser! {
     grammar program_parser() for str {
         pub rule program() -> Program
-            = _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ "\n" cmd:command() _ "***" {
+            = _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ comment() _ "\n" cmd:command() _ "***" {
                 Program {
                     principal: p,
                     password: s,
@@ -30,9 +30,9 @@ peg::parser! {
                       | '-' ]*) "\"" { s.to_string() }
 
         rule command() -> Command
-            = _ "exit" _ "\n" { Command::Exit }
-            / _ "return" __ e:expr() _ "\n" { Command::Return(e) }
-            / _ p:primitive_command() _ "\n" c:command() { Command::Chain(p, Box::new(c)) }
+            = _ "exit" _ comment() _ "\n" { Command::Exit }
+            / _ "return" __ e:expr() _ comment() _ "\n" { Command::Return(e) }
+            / _ p:primitive_command() _ comment() _ "\n" c:command() { Command::Chain(p, Box::new(c)) }
 
         rule identifier() -> Identifier
             = s:$(['A'..='Z'
@@ -90,8 +90,8 @@ peg::parser! {
                 }
 
         rule value() -> Value
-            = v:variable() { Value::Variable(v) }
-            / v:variable() _ "." _ f:variable() { Value::Variable(Variable::Member(Box::new(v), Box::new(f))) }
+            = v:variable() _ "." _ f:variable() { Value::Variable(Variable::Member(Box::new(v), Box::new(f))) }
+            / v:variable() { Value::Variable(v) }
             / s:string() { Value::String(s) }
 
         rule target() -> Target
@@ -109,6 +109,19 @@ peg::parser! {
 
         rule _() = quiet!{ " "* }
         rule __() = quiet!{ " "+ }
+        rule comment() = quiet!{ "//"
+                 [ 'A'..='Z'
+                 | 'a'..='z'
+                 | '0'..='9'
+                 | '_'
+                 | ' '
+                 | ','
+                 | ';'
+                 | '\\'
+                 | '.'
+                 | '?'
+                 | '!'
+                 | '-']*}
     }
 }
 
