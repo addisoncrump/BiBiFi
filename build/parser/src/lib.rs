@@ -4,7 +4,7 @@ use types::*;
 peg::parser! {
     grammar program_parser() for str {
         pub rule program() -> Program
-            = (comment() "\n")* _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ comment() _ "\n" cmd:command() _ "***" ("\n" comment())* {
+            = (comment() "\n")* _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ "\n" cmd:line() _ "***" ("\n" comment())* {
                 Program {
                     principal: p,
                     password: s,
@@ -34,9 +34,9 @@ peg::parser! {
             / comment() "\n" l:line() { l }
 
         rule command() -> Command
-            = _ "exit" _ comment() _ "\n" { Command::Exit }
-            / _ "return" __ e:expr() _ comment() _ "\n" { Command::Return(e) }
-            / _ p:primitive_command() _ comment() _ "\n" c:line() { Command::Chain(p, Box::new(c)) }
+            = _ "exit" _ (comment() _)? "\n" { Command::Exit }
+            / _ "return" __ e:expr() _ (comment() _)? "\n" { Command::Return(e) }
+            / _ p:primitive_command() _ (comment() _)? "\n" c:line() { Command::Chain(p, Box::new(c)) }
 
         rule identifier() -> Identifier
             = s:$(['A'..='Z'
