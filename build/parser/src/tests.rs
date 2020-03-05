@@ -31,7 +31,7 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
                     name: "bob".to_string()
                 }
             },
-            password: "lmao".to_string(),
+            password: hash("lmao".to_string()),
             command: Command::Chain(
                 PrimitiveCommand::CreatePrincipal(CreatePrincipal {
                     principal: Principal {
@@ -39,7 +39,7 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
                             name: "jack".to_string()
                         }
                     },
-                    password: "hammer".to_string()
+                    password: hash("hammer".to_string())
                 }),
                 Box::new(Command::Chain(
                     PrimitiveCommand::ChangePassword(ChangePassword {
@@ -48,7 +48,7 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
                                 name: "bob".to_string()
                             }
                         },
-                        password: "bits".to_string()
+                        password: hash("bits".to_string())
                     }),
                     Box::new(Command::Chain(
                         PrimitiveCommand::Assignment(Assignment {
@@ -100,9 +100,9 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
                                             name: "d".to_string()
                                         }),
                                         expr: Expr::Value(Value::Variable(Variable::Member(
-                                            Box::new(Variable::Variable(Identifier {
+                                            Identifier {
                                                 name: "b".to_string()
-                                            })),
+                                            },
                                             Box::new(Variable::Variable(Identifier {
                                                 name: "q".to_string()
                                             })),
@@ -130,11 +130,9 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
                                                     }),
                                                     expr: Expr::Value(Value::Variable(
                                                         Variable::Member(
-                                                            Box::new(Variable::Variable(
-                                                                Identifier {
-                                                                    name: "b".to_string()
-                                                                }
-                                                            )),
+                                                            Identifier {
+                                                                name: "b".to_string()
+                                                            },
                                                             Box::new(Variable::Variable(
                                                                 Identifier {
                                                                     name: "r".to_string()
@@ -264,7 +262,7 @@ fn basic() -> Result<(), Box<dyn Error>> {
                     name: "bob".to_string()
                 }
             },
-            password: "lmao".to_string(),
+            password: hash("lmao".to_string()),
             command: Command::Exit
         }
     );
@@ -288,7 +286,7 @@ fn basic_1() -> Result<(), Box<dyn Error>> {
                     name: "alice".to_string()
                 }
             },
-            password: "alices_password".to_string(),
+            password: hash("alices_password".to_string()),
             command: Command::Return(Expr::Value(Value::Variable(Variable::Variable(
                 Identifier {
                     name: "msg".to_string()
@@ -340,7 +338,7 @@ return "success"
                     name: "admin".to_string()
                 }
             },
-            password: "admin".to_string(),
+            password: hash("admin".to_string()),
             command: Command::Chain(
                 PrimitiveCommand::CreatePrincipal(CreatePrincipal {
                     principal: Principal {
@@ -348,7 +346,7 @@ return "success"
                             name: "alice".to_string()
                         },
                     },
-                    password: "alices_password".to_string()
+                    password: hash("alices_password".to_string())
                 }),
                 Box::new(Command::Chain(
                     PrimitiveCommand::Assignment(Assignment {
