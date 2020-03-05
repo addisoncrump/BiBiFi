@@ -23,6 +23,9 @@ version = "0.1.0"
 [[package]]
 name = "bibifi-frontend"
 version = "0.1.0"
+dependencies = [
+ "bibifi-runtime 0.1.0",
+]
 
 [[package]]
 name = "bibifi-fuzzer"
