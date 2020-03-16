@@ -1,11 +1,15 @@
 #!/bin/bash
 
-fuzzerResponse=fuzzerResponse
-oracleResponse=oracleResponse
+pipe=/tmp/oraclepipe
 
-mkfifo $fuzzerResponse
-mkfifo $oracleResponse
+if [[ ! -p $pipe ]]; then
+    echo "Reader not running"
+    exit 1
+fi
 
-rm ./logs/oracle_out.txt
+
+#rm ./logs/oracle_out.txt
 #./oracle $1  &> output | $output > ./logs/oracle_out.txt
-./oracle $1 &>> ./logs/oracle_out.txt
+#./oracle $1 &>> ./logs/oracle_out.txt
+./oracle $1 &> $pipe
+echo $pipe
