@@ -305,7 +305,6 @@ fn pg4_max_1m_char_prog_eq_2() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-#[ignore]
 // Programs with size > 1M should be rejected
 fn pg4_max_1m_char_prog_gr() {
     let admin_pass = "l".repeat(999943);
@@ -362,7 +361,6 @@ fn pg5_tkn_s_max_65k_char_eq() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-#[ignore]
 // Programs with token 's' > 65535 chars should be rejected
 fn pg5_tkn_s_max_65k_char_gr() {
     let admin_pass = "l".repeat(65536);
