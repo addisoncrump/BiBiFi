@@ -1,0 +1,13 @@
+as principal admin password "admin" do
+   create principal bob "B0BPWxxd"
+   set x = "my string"
+   set y = { f1 = x, f2 = "field2" }
+   set delegation x admin read -> bob
+   return y.f1
+***
+
+as principal bob password "B0BPWxxd" do
+   set z = "bobs string"
+   set x = "another string"
+   return x
+***

@@ -4,3 +4,7 @@ as principal admin password "admin" do
    set delegation msg admin read -> alice
    return "success"
 ***
+
+as principal alice password "alices_password" do
+   return msg
+***
