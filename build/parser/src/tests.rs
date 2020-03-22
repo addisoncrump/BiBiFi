@@ -249,10 +249,11 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
 #[test]
 // Programs with size = 1M should run normally
 fn pg4_max_1m_char_prog_eq_1() -> Result<(), Box<dyn Error>> {
-    let admin_pass = "l".repeat(999940);
+    let admin_pass = "l";
+    let comment = "l".repeat(999937);
     let program_input = format!(r#"as principal bob password "{}" do
-            exit
-       ***"#, admin_pass);
+            exit //{}
+       ***"#, admin_pass, comment);
     let program_input_str = &*program_input;
     let program = program_parser::program(
         program_input_str,
@@ -266,7 +267,7 @@ fn pg4_max_1m_char_prog_eq_1() -> Result<(), Box<dyn Error>> {
                     name: "bob".to_string()
                 }
             },
-            password: "l".repeat(999940).to_string(),
+            password: "l".to_string(),
             command: Command::Exit
         }
     );
@@ -277,10 +278,11 @@ fn pg4_max_1m_char_prog_eq_1() -> Result<(), Box<dyn Error>> {
 #[test]
 // Programs with size = 1M should run normally
 fn pg4_max_1m_char_prog_eq_2() -> Result<(), Box<dyn Error>> {
-    let admin_pass = "l".repeat(999941);
+    let admin_pass = "l";
+    let comment = "l".repeat(999938);
     let program_input = format!(r#"as principal bob password "{}" do
-            exit
-       ***"#, admin_pass);
+            exit //{}
+       ***"#, admin_pass, comment);
     let program_input_str = &*program_input;
     let program = program_parser::program(
         program_input_str,
@@ -294,7 +296,7 @@ fn pg4_max_1m_char_prog_eq_2() -> Result<(), Box<dyn Error>> {
                     name: "bob".to_string()
                 }
             },
-            password: "l".repeat(999941).to_string(),
+            password: "l".to_string(),
             command: Command::Exit
         }
     );
@@ -305,10 +307,11 @@ fn pg4_max_1m_char_prog_eq_2() -> Result<(), Box<dyn Error>> {
 #[test]
 // Programs with size > 1M should be rejected
 fn pg4_max_1m_char_prog_gr() {
-    let admin_pass = "l".repeat(999942);
+    let admin_pass = "l";
+    let comment = "l".repeat(999938);
     let program_input = format!(r#"as principal bob password "{}" do
-            exit
-       ***"#, admin_pass);
+            exit //{}
+       ***"#, admin_pass, comment);
     let program_input_str = &*program_input;
     assert!(program_parser::program(
         program_input_str,
