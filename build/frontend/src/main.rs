@@ -4,6 +4,7 @@ use tokio::net::TcpListener;
 
 use std::env;
 use std::error::Error;
+use std::str;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -14,6 +15,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .unwrap_or_else(|| "127.0.0.1:8080".to_string());
 
+    //reads password from second argument. Default to admin.
     let password = env::args()
         .nth(2)
         .unwrap_or_else(|| "admin".to_string());
@@ -23,7 +25,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // above and must be associated with an event loop.
     let mut listener = TcpListener::bind(&addr).await?;
     println!("Listening on: {}", addr);
-    println!("Password: {}", password);
 
     loop {
         // Asynchronously wait for an inbound socket.
@@ -38,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // which will allow all of our clients to be processed concurrently.
 
         tokio::spawn(async move {
-            let mut buf = [0; 1024];
+            let mut buf = [0; 1024]; 
 
             // In a loop, read data from the socket and write the data back.
             loop {
@@ -50,6 +51,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 if n == 0 {
                     return;
                 }
+
+                let msg = str::from_utf8(&buf[0..n]).unwrap();
+                if msg == password{ //ERROR HERE!!!
+                    println!("Password Match!");  
+                }
+                println!("MSG: {}", msg);
 
                 socket
                     .write_all(&buf[0..n])
