@@ -16,9 +16,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap_or_else(|| "127.0.0.1:8080".to_string());
 
     //reads password from second argument. Default to admin.
-    let password = env::args()
+    /*let password = env::args()
         .nth(2)
-        .unwrap_or_else(|| "admin".to_string());
+        .unwrap_or_else(|| "admin".to_string());*/
 
     // Next up we create a TCP listener which will listen for incoming
     // connections. This TCP listener is bound to the address we determined
@@ -53,10 +53,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 let msg = str::from_utf8(&buf[0..n]).unwrap();
-                if msg == password{ //ERROR HERE!!!
-                    println!("Password Match!");  
-                }
-                println!("MSG: {}", msg);
+                //println!("MSG: {}", msg);
+                //Call parser here
 
                 socket
                     .write_all(&buf[0..n])
