@@ -106,8 +106,8 @@ impl BiBiFi {
                             p,
                         ),
                     } {
-                        true => {}
-                        false => {}
+                        false => return None,
+                        _ => {}
                     }
                 }
                 match cmd {

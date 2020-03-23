@@ -5,7 +5,7 @@ use std::collections::{HashMap, VecDeque};
 pub struct Database {
     principals: HashMap<String, VPrincipal>,
     variables: HashMap<String, Value>,
-    default: String,
+    def_delegator: String,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -59,7 +59,7 @@ impl Database {
         Database {
             principals,
             variables: HashMap::new(),
-            default: "anyone".to_string(),
+            def_delegator: "anyone".to_string(),
         }
     }
 
@@ -132,14 +132,30 @@ impl Database {
 
     /// Preconditions: none, but you should check if principal exists first
     pub fn create_principal(&mut self, principal: &String, hash: &[u8; 32]) {
+        let mut delegations = Vec::new();
+        delegations.push(Delegation {
+            target: Target::All,
+            delegator: self.def_delegator.clone(),
+            right: Right::Read,
+        });
+        delegations.push(Delegation {
+            target: Target::All,
+            delegator: self.def_delegator.clone(),
+            right: Right::Write,
+        });
+        delegations.push(Delegation {
+            target: Target::All,
+            delegator: self.def_delegator.clone(),
+            right: Right::Append,
+        });
+        delegations.push(Delegation {
+            target: Target::All,
+            delegator: self.def_delegator.clone(),
+            right: Right::Delegate,
+        });
         self.principals.insert(
             principal.clone(),
-            VPrincipal::User(
-                Principal {
-                    delegations: Vec::new(),
-                },
-                hash.clone(),
-            ),
+            VPrincipal::User(Principal { delegations }, hash.clone()),
         );
     }
 
@@ -183,7 +199,9 @@ impl Database {
                         VPrincipal::Anyone(p) | VPrincipal::User(p, _) => p
                             .delegations
                             .iter()
-                            .filter(|d| &d.target == target && &d.right == right)
+                            .filter(|d| {
+                                (target == &Target::All || &d.target == target) && &d.right == right
+                            })
                             .for_each(|d| searching.push_back(d)),
                     }
                 }
