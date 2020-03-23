@@ -6,11 +6,8 @@
 
 /// The members of the AST which will be returned in the parsing result.
 pub mod types;
-use crate::types::Scope::{Global, Local};
 use arrayref::array_ref;
 use blake2::{Blake2s, Digest};
-use std::collections::{HashMap, HashSet};
-use std::error::Error;
 use types::*;
 use zeroize::Zeroize;
 
@@ -24,7 +21,7 @@ fn hash(input: String) -> [u8; 32] {
 peg::parser! {
     grammar program_parser() for str {
         pub rule program<'a>() -> Program
-            = (comment() "\n")* _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ "\n" cmd:line() _ "***" ("\n" comment())* {
+            = (comment() "\n")* _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ comment()? "\n" cmd:line() _ "***" _ comment()? ("\n" comment())* {
                 Program {
                     principal: p,
                     password: hash(s),
@@ -164,13 +161,13 @@ struct ZeroisingString(String);
 /// Main entrypoint for the parser. Provide a program as a string, you get a program returned. Easy!
 pub fn parse(program: String) -> Result<Program, Box<dyn std::error::Error>> {
     let wrap = ZeroisingString(program);
-    if wrap.0.len() > 1000000 || !wrap.0.is_ascii() {
+    if wrap.0.len() > 1048576 || !wrap.0.is_ascii() {
         Err(Box::new(std::io::Error::from(
             std::io::ErrorKind::InvalidData,
         )))
     } else {
         match program_parser::program(&wrap.0) {
-            Ok(mut program) => Ok(program),
+            Ok(program) => Ok(program),
             Err(e) => Err(Box::new(e)),
         }
     }
