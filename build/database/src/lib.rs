@@ -186,7 +186,9 @@ impl Database {
                 let mut searching: VecDeque<&Delegation> = p
                     .delegations
                     .iter()
-                    .filter(|d| &d.target == target && &d.right == right)
+                    .filter(|d| {
+                        (&d.target == &Target::All || &d.target == target) && &d.right == right
+                    })
                     .collect();
                 while !searching.is_empty() {
                     let curr = searching.pop_front().unwrap(); // guaranteed by while conditionx
@@ -200,7 +202,8 @@ impl Database {
                             .delegations
                             .iter()
                             .filter(|d| {
-                                (target == &Target::All || &d.target == target) && &d.right == right
+                                (&d.target == &Target::All || &d.target == target)
+                                    && &d.right == right
                             })
                             .for_each(|d| searching.push_back(d)),
                     }
