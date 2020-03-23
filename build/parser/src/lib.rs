@@ -6,8 +6,11 @@
 
 /// The members of the AST which will be returned in the parsing result.
 pub mod types;
+use crate::types::Scope::{Global, Local};
 use arrayref::array_ref;
 use blake2::{Blake2s, Digest};
+use std::collections::{HashMap, HashSet};
+use std::error::Error;
 use types::*;
 use zeroize::Zeroize;
 
@@ -20,14 +23,12 @@ fn hash(input: String) -> [u8; 32] {
 
 peg::parser! {
     grammar program_parser() for str {
-        pub rule program() -> Program
+        pub rule program<'a>() -> Program
             = (comment() "\n")* _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ "\n" cmd:line() _ "***" ("\n" comment())* {
                 Program {
                     principal: p,
                     password: hash(s),
                     command: cmd,
-                    // principals: HashSet::new(),
-                    // variables: HashMap::new(),
                 }
             }
 
@@ -75,7 +76,7 @@ peg::parser! {
             / c:change_password() { PrimitiveCommand::ChangePassword(c) }
             / "set" __ a:assignment() { PrimitiveCommand::Assignment(a) }
             / c:append() { PrimitiveCommand::Append(c) }
-            / "local" __ a:assignment() { PrimitiveCommand::LocalAssignment(a) }
+            / "local" __ a:root_assignment() { PrimitiveCommand::LocalAssignment(a) }
             / c:for_each() { PrimitiveCommand::ForEach(c) }
             / "set" __ d:delegation() { PrimitiveCommand::SetDelegation(d) }
             / "delete" __ d:delegation() { PrimitiveCommand::DeleteDelegation(d) }
@@ -90,12 +91,20 @@ peg::parser! {
             { ChangePassword { principal: p, password: hash(s) } }
 
         rule assignment() -> Assignment
-            = v:variable() _ "=" _ e:expr()
-                { Assignment { variable: v, expr: e } }
+            = a:root_assignment() { a }
+            / a:member_assignment() { a }
+
+        rule root_assignment() -> Assignment
+            = i:identifier() _ "=" _ e:expr()
+                { Assignment { variable: Variable::Variable(i), expr: e } }
+
+        rule member_assignment() -> Assignment
+            = i1:identifier() "." i2:identifier() _ "=" _ e:expr()
+                { Assignment { variable: Variable::Member(i1, Box::new(Variable::Variable(i2))), expr: e } }
 
         rule append() -> Append
-            = "append" __ "to" __ v:variable() __ "with" __ e:expr()
-                { Append { variable: v, expr: e } }
+            = "append" __ "to" __ i:identifier() __ "with" __ e:expr()
+                { Append { variable: Variable::Variable(i), expr: e } }
 
         rule for_each() -> ForEach
             = "foreach" __ y:variable() __ "in" __ x:variable() __ "replacewith" __ e:expr()
@@ -119,7 +128,7 @@ peg::parser! {
 
         rule target() -> Target
             = "all" { Target::All }
-            / v:variable() { Target::Variable(v) }
+            / i:identifier() { Target::Variable(i) }
 
         rule right() -> Right
             = "read" { Right::Read }
@@ -148,80 +157,6 @@ peg::parser! {
     }
 }
 
-// fn enrich(program: &mut Program) -> Result<(), Box<dyn std::error::Error>> {
-//     fn safe_insert(
-//         variables: &mut HashMap<Identifier, Scope>,
-//         ident: &mut Identifier,
-//         scope: Scope,
-//     ) -> Result<(), Box<dyn std::error::Error>> {
-//         if variables.insert(ident.clone(), scope.clone()) == Some(!scope) {
-//             return Err(Box::new(std::io::Error::from(
-//                 std::io::ErrorKind::InvalidData,
-//             )));
-//         }
-//         Ok(())
-//     }
-//
-//     let mut command = &mut program.command;
-//     while let Command::Chain(prim, next) = command {
-//         // TODO I need to lock member variables in exprs
-//         command = &mut *next;
-//         match prim {
-//             PrimitiveCommand::CreatePrincipal(cp) => {
-//                 program.principals.insert(cp.principal.ident.clone());
-//             }
-//             PrimitiveCommand::ChangePassword(cp) => {
-//                 program.principals.insert(cp.principal.ident.clone());
-//             }
-//             PrimitiveCommand::Assignment(a) => {
-//                 if let Variable::Variable(ident) = &mut a.variable {
-//                     safe_insert(&mut program.variables, ident, Scope::Global)?;
-//                 } else {
-//                     panic!("Encountered a member variable in an assignment statement.");
-//                 }
-//             }
-//             PrimitiveCommand::Append(a) => {
-//                 if let Variable::Variable(ident) = &mut a.variable {
-//                     if !program.variables.contains_key(ident) {
-//                         // assert it's global
-//                         safe_insert(&mut program.variables, ident, Scope::Global)?;
-//                     }
-//                 } else {
-//                     panic!("Encountered a member variable in an append statement.");
-//                 }
-//             }
-//             PrimitiveCommand::LocalAssignment(a) => {
-//                 if let Variable::Variable(ident) = &mut a.variable {
-//                     safe_insert(&mut program.variables, ident, Scope::Local)?;
-//                 } else {
-//                     panic!("Encountered a member variable in an assignment statement.");
-//                 }
-//             }
-//             PrimitiveCommand::ForEach(fe) => {
-//                 if let Variable::Variable(ident) = &mut fe.value {
-//                     if program.variables.contains_key(ident) {
-//                         return Err(Box::new(std::io::Error::from(
-//                             std::io::ErrorKind::InvalidData,
-//                         )));
-//                     }
-//                 } else {
-//                     panic!("Encountered a member variable as a iter value in a foreach statement.");
-//                 }
-//                 if let Variable::Variable(ident) = &mut fe.list {
-//                     safe_insert(&mut program.variables, ident, Scope::Global)?;
-//                 } else {
-//                     panic!("Encountered a member variable as a list in a foreach statement.");
-//                 }
-//             }
-//             PrimitiveCommand::SetDelegation(_) => {}
-//             PrimitiveCommand::DeleteDelegation(_) => {}
-//             PrimitiveCommand::DefaultDelegator(_) => {}
-//         }
-//     }
-//
-//     Ok(())
-// }
-
 #[derive(Zeroize)]
 #[zeroize(drop)]
 struct ZeroisingString(String);
@@ -235,10 +170,7 @@ pub fn parse(program: String) -> Result<Program, Box<dyn std::error::Error>> {
         )))
     } else {
         match program_parser::program(&wrap.0) {
-            Ok(program) => {
-                // enrich(&mut program)?;
-                Ok(program)
-            }
+            Ok(mut program) => Ok(program),
             Err(e) => Err(Box::new(e)),
         }
     }

@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 
 /// The first line of a valid program indicates a principal and her password. Each subsequent line
@@ -82,7 +83,7 @@ use std::ops::Not;
 /// succeeds or none of it succeeds.  Thus, as a result of the security violation, the creation of
 /// variable z is rolled back so it is as if z was never created and thus subsequent programs will
 /// not see it.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Program {
     /// The principal executing this program.
     pub principal: Principal,
@@ -90,15 +91,13 @@ pub struct Program {
     pub password: [u8; 32],
     /// The command entrypoint for the program.
     pub command: Command,
-    // pub principals: HashSet<Identifier>,
-    // pub variables: HashMap<Identifier, Scope>,
 }
 
 /// Each program is run as a different user, referred to as a principal. Whichever principal runs
 /// the program determines what data the program can access. The program in this example is being
 /// run by a principal called admin, which is the superuser of the system; we will return to admin’s
 /// abilities later.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct Principal {
     /// The identifier which identifies this principal by name, used for lookups and locking in the
     /// database during runtime.
@@ -106,7 +105,7 @@ pub struct Principal {
 }
 
 /// A command is a single executable element of the program. See each member for details.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub enum Command {
     /// If the command is exit, then the server outputs the status code is EXITING, terminates the
     /// client connection, and halts with return code 0 (and thus does not accept any more
@@ -126,7 +125,7 @@ pub enum Command {
 /// newlines; we detail each primitive command below. Note that commands may include expressions;
 /// these are executed as discussed [in Expr](enum.Expr.html). If an expression fails or issues a
 /// security violation, then the command that invokes it does.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub enum PrimitiveCommand {
     /// Creates a principal p having password s.
     ///
@@ -273,7 +272,7 @@ pub enum PrimitiveCommand {
 
 /// The struct containing the data required to represent the
 /// [CreatePrincipal](enum.PrimitiveCommand.html#variant.CreatePrincipal) primitive command.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct CreatePrincipal {
     /// The principal to be created.
     pub principal: Principal,
@@ -281,32 +280,36 @@ pub struct CreatePrincipal {
     pub password: [u8; 32],
 }
 
-#[derive(Clone, PartialEq, Debug)]
+/// The struct containing the data required to represent the
+/// [ChangePassword](enum.PrimitiveCommand.html#variant.ChangePassword) primitive command.
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct ChangePassword {
+    /// The principal who's password will be changed.
     pub principal: Principal,
+    /// The password to set it to (hashed).
     pub password: [u8; 32],
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct Assignment {
     pub variable: Variable,
     pub expr: Expr,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct Append {
     pub variable: Variable,
     pub expr: Expr,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct ForEach {
     pub value: Variable,
     pub list: Variable,
     pub expr: Expr,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct Delegation {
     pub target: Target,
     pub delegator: Principal,
@@ -314,32 +317,39 @@ pub struct Delegation {
     pub delegated: Principal,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub enum Expr {
     Value(Value),
     EmptyList,
     FieldVals(Vec<Assignment>),
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub enum Value {
     Variable(Variable),
     String(String),
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub enum Variable {
     Variable(Identifier),
     Member(Identifier, Box<Variable>), // nested values possible, but not implemented
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub enum Target {
-    All,
-    Variable(Variable),
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
+pub enum Type {
+    Root,
+    List,
+    Member,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
+pub enum Target {
+    All,
+    Variable(Identifier),
+}
+
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub enum Right {
     Read,
     Write,
@@ -347,7 +357,7 @@ pub enum Right {
     Delegate,
 }
 
-#[derive(Clone, PartialEq, Debug, Copy)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub enum Scope {
     Local,
     Global,
@@ -364,7 +374,7 @@ impl Not for Scope {
     }
 }
 
-#[derive(Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 pub struct Identifier {
     pub name: String,
 }
