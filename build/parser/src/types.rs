@@ -1,4 +1,3 @@
-use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 
 /// The first line of a valid program indicates a principal and her password. Each subsequent line

@@ -1,10 +1,11 @@
 [package]
-name = "bibifi-fuzzer"
+name = "bibifi-util"
 version = "0.1.0"
-authors = ["Garrett Persyn <gpersyn@tamu.edu>"]
+authors = ["Addison Crump <me@addisoncrump.info>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# strictly do not depend on any bibifi libs; should be agnostic
+arrayref = "0.3.6"
+blake2 = "0.8.1"

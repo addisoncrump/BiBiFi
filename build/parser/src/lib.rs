@@ -2,26 +2,15 @@
 //! interpreting user input. Additionally, it performs some static analysis to ensure that programs
 //! are correct before execution (i.e. naming, delegation, etc).
 
-#![warn(missing_docs)]
-
 /// The members of the AST which will be returned in the parsing result.
 pub mod types;
-use arrayref::array_ref;
-use blake2::{Blake2s, Digest};
+use bibifi_util::hash;
 use types::*;
-use zeroize::Zeroize;
-
-fn hash(input: String) -> [u8; 32] {
-    let mut hasher = Blake2s::new();
-    hasher.input(input);
-    let res = hasher.result();
-    *array_ref!(res.as_slice(), 0, 32)
-}
 
 peg::parser! {
     grammar program_parser() for str {
         pub rule program<'a>() -> Program
-            = (comment() "\n")* _ "as" __ "principal" __ p:principal() __ "password" __ s:string() __ "do" _ comment()? "\n" cmd:line() _ "***" _ comment()? ("\n" comment())* {
+            = (comment() "\n")* _ "as" __ "principal" __ !keyword() p:principal() __ "password" __ s:string() __ "do" _ comment()? "\n" cmd:line() _ "***" _ comment()? ("\n" comment())* {
                 Program {
                     principal: p,
                     password: hash(s),
@@ -64,9 +53,9 @@ peg::parser! {
                  | '_']*<0,254>) { Identifier { name: s.to_string() } }
 
         rule expr() -> Expr
-            = v:value() { Expr::Value(v) }
+            = !keyword() v:value() { Expr::Value(v) }
             / "[" _ "]" { Expr::EmptyList }
-            / "{" a:( _ a:assignment() _ {a}) ** "," _ "}" { Expr::FieldVals(a) }
+            / "{" a:( _ () a:root_value_assignment() _ {a}) ** "," _ "}" { Expr::FieldVals(a) }
 
         rule primitive_command() -> PrimitiveCommand
             = c:create_principal() { PrimitiveCommand::CreatePrincipal(c) }
@@ -91,16 +80,20 @@ peg::parser! {
             = a:root_assignment() { a }
             / a:member_assignment() { a }
 
+        rule root_value_assignment() -> Assignment
+            = !keyword() i:identifier() _ "=" _ v:value()
+                { Assignment { variable: Variable::Variable(i), expr: Expr::Value(v) }}
+
         rule root_assignment() -> Assignment
-            = i:identifier() _ "=" _ e:expr()
+            = !keyword() i:identifier() _ "=" _ e:expr()
                 { Assignment { variable: Variable::Variable(i), expr: e } }
 
         rule member_assignment() -> Assignment
-            = i1:identifier() "." i2:identifier() _ "=" _ e:expr()
+            = !keyword() i1:identifier() "." !keyword() i2:identifier() _ "=" _ e:expr()
                 { Assignment { variable: Variable::Member(i1, Box::new(Variable::Variable(i2))), expr: e } }
 
         rule append() -> Append
-            = "append" __ "to" __ i:identifier() __ "with" __ e:expr()
+            = "append" __ "to" __ !keyword() i:identifier() __ "with" __ e:expr()
                 { Append { variable: Variable::Variable(i), expr: e } }
 
         rule for_each() -> ForEach
@@ -108,7 +101,7 @@ peg::parser! {
                 { ForEach { value: y, list: x, expr: e } }
 
         rule delegation() -> Delegation
-            = "delegation" __ t:target() __ q:principal() __ r:right() _ "->" _ p:principal()
+            = "delegation" __ t:target() __ !keyword() q:principal() __ r:right() _ "->" _ !keyword() p:principal()
                 {
                     Delegation {
                         target: t,
@@ -119,13 +112,13 @@ peg::parser! {
                 }
 
         rule value() -> Value
-            = i:identifier() _ "." _ f:variable() { Value::Variable(Variable::Member(i, Box::new(f))) }
+            = !keyword() i:identifier() _ "." _ !keyword() f:identifier() { Value::Variable(Variable::Member(i, Box::new(Variable::Variable(f)))) }
             / v:variable() { Value::Variable(v) }
             / s:string() { Value::String(s) }
 
         rule target() -> Target
             = "all" { Target::All }
-            / i:identifier() { Target::Variable(i) }
+            / !keyword() i:identifier() { Target::Variable(i) }
 
         rule right() -> Right
             = "read" { Right::Read }
@@ -134,7 +127,7 @@ peg::parser! {
             / "delegate" { Right::Delegate }
 
         rule variable() -> Variable
-            = i:identifier() { Variable::Variable(i) }
+            = !keyword() i:identifier() { Variable::Variable(i) }
 
         rule _() = quiet!{ " "* }
         rule __() = quiet!{ " "+ }
@@ -151,22 +144,23 @@ peg::parser! {
                  | '?'
                  | '!'
                  | '-']*}
+
+        rule keyword() = quiet!{
+            "all" / "append" / "as" / "change" / "create" / "default" / "delegation" / "delegator"
+                  / "delete" / "do" / "exit" / "foreach" / "in" / "local" / "password" / "principal"
+                  / "read" / "replacewith" / "return" / "set" / "to" / "write" / "***"
+        }
     }
 }
 
-#[derive(Zeroize)]
-#[zeroize(drop)]
-struct ZeroisingString(String);
-
 /// Main entrypoint for the parser. Provide a program as a string, you get a program returned. Easy!
 pub fn parse(program: String) -> Result<Program, Box<dyn std::error::Error>> {
-    let wrap = ZeroisingString(program);
-    if wrap.0.len() > 1048576 || !wrap.0.is_ascii() {
+    if program.len() > 1000000 || !program.is_ascii() {
         Err(Box::new(std::io::Error::from(
             std::io::ErrorKind::InvalidData,
         )))
     } else {
-        match program_parser::program(&wrap.0) {
+        match program_parser::program(&program) {
             Ok(program) => Ok(program),
             Err(e) => Err(Box::new(e)),
         }

@@ -1,4 +1,5 @@
 use super::*;
+use bibifi_util::hash;
 use std::error::Error;
 
 #[test]
@@ -248,7 +249,7 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
 // Programs with size = 1M should run normally
 fn pg4_max_1m_char_prog_eq_1() -> Result<(), Box<dyn Error>> {
     let admin_pass = "l";
-    let comment = "l".repeat(999937 + 48576);
+    let comment = "l".repeat(999937);
     let program_input = format!(
         r#"as principal bob password "{}" do
             exit //{}
@@ -309,7 +310,7 @@ fn pg4_max_1m_char_prog_eq_2() -> Result<(), Box<dyn Error>> {
 // Programs with size > 1M should be rejected
 fn pg4_max_1m_char_prog_gr() {
     let admin_pass = "l";
-    let comment = "l".repeat(999938 + 48576);
+    let comment = "l".repeat(999938);
     let program_input = format!(
         r#"as principal bob password "{}" do
             exit //{}

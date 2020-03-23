@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 bibifi-parser = { path = "../parser" }
 bibifi-database = { path = "../database" }
+tokio = { version = "0.2", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
