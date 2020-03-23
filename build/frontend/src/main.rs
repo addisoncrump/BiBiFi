@@ -40,7 +40,8 @@ async fn main() -> Result<(), ()> {
             // based IO, instead we have to do this.
             let mut buf_reader = BufReader::new(reader);
             let mut buf = vec![];
-            let mut ast_count = 0; //counts the number of astrics
+            let mut ast_count = 0; //counts the number strings with only a single asterisk
+            let mut clear_buf = 0; 
             // Continuously read one line at a time from this stream
             loop {
                 match buf_reader.read_until(b'*', &mut buf).await {
@@ -54,17 +55,20 @@ async fn main() -> Result<(), ()> {
                             println!("EOF received");
                             break;
                         }
-                        ast_count = ast_count + 1;
-                        println!("count: {}",ast_count);
 
                         // Create a String out of the u8 buffer of characters
                         let buf_string = String::from_utf8_lossy(&buf);
-
-                        if buf_string == "*"{
-                            println!("Yes!!!");
+                        if (ast_count == 0) && (n>1){
+                            ast_count = ast_count + 1;
                         }
+                        else if (ast_count > 0) && (n==1){
+                            ast_count = ast_count + 1;
+                        }else {
+                            ast_count = 0;
+                            clear_buf = 1;
+                        }
+                        println!("count: {}",ast_count);
 
- 
                         if ast_count == 3{
                             // Printout the message received
                             println!("Received message: {}",buf_string);
@@ -82,10 +86,14 @@ async fn main() -> Result<(), ()> {
                             }
                             // Clear the buffer so that this line doesn't get mixed
                             // with the next lines
-                            buf.clear();
+                            clear_buf = 1;
                             ast_count = 0; 
                         }
                         
+                        if clear_buf == 1{
+                            buf.clear();
+                            clear_buf=0;
+                        }
                     },
                     Err(e) => println!("Error receiving message: {}", e)
                 }
