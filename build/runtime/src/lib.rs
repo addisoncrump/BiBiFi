@@ -239,6 +239,10 @@ impl BiBiFi {
                         &Target::Variable(i.name.clone()),
                         &Right::Append,
                         &program.principal.ident.name,
+                    ) || database.check_right(
+                        &Target::Variable(i.name.clone()),
+                        &Right::Write,
+                        &program.principal.ident.name,
                     ) {
                         // TODO append
                         sender
@@ -257,6 +261,17 @@ impl BiBiFi {
                             .unwrap();
                         false
                     };
+                }
+            } else if let Some(ref mut value) = locals.get_mut(&i.name) {
+                if let Value::List(list) = value {
+                    // TODO append
+                    sender
+                        .send(Entry {
+                            status: Status::APPEND,
+                            output: None,
+                        })
+                        .unwrap();
+                    return true;
                 }
             }
         }
