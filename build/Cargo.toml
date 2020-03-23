@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 tokio = { version = "0.2", features = ["full"] }
 futures = "0.3"
-futures-executor = "0.3.4"
 bibifi-runtime = { path = "runtime" }
 
 [workspace]

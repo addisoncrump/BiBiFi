@@ -170,7 +170,7 @@ struct ZeroisingString(String);
 
 /// Main entrypoint for the parser. Provide a program as a string, you get a program returned. Easy!
 pub fn parse(program: String) -> Result<Program, Box<dyn std::error::Error>> {
-    if program.len() > 1048576 || !program.is_ascii() {
+    if program.len() > 1000000 || !program.is_ascii() {
         Err(Box::new(std::io::Error::from(
             std::io::ErrorKind::InvalidData,
         )))
