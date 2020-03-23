@@ -2,21 +2,10 @@
 //! interpreting user input. Additionally, it performs some static analysis to ensure that programs
 //! are correct before execution (i.e. naming, delegation, etc).
 
-#![warn(missing_docs)]
-
 /// The members of the AST which will be returned in the parsing result.
 pub mod types;
-use arrayref::array_ref;
-use blake2::{Blake2s, Digest};
+use bibifi_util::hash;
 use types::*;
-use zeroize::Zeroize;
-
-fn hash(input: String) -> [u8; 32] {
-    let mut hasher = Blake2s::new();
-    hasher.input(input);
-    let res = hasher.result();
-    *array_ref!(res.as_slice(), 0, 32)
-}
 
 peg::parser! {
     grammar program_parser() for str {
@@ -163,10 +152,6 @@ peg::parser! {
         }
     }
 }
-
-#[derive(Zeroize)]
-#[zeroize(drop)]
-struct ZeroisingString(String);
 
 /// Main entrypoint for the parser. Provide a program as a string, you get a program returned. Easy!
 pub fn parse(program: String) -> Result<Program, Box<dyn std::error::Error>> {

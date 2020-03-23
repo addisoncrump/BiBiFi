@@ -1,4 +1,5 @@
 use super::*;
+use bibifi_util::hash;
 use std::error::Error;
 
 #[test]
