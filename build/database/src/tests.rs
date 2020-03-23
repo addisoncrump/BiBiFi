@@ -120,17 +120,6 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
         &"anyone".to_string(),
     );
 
-    let mut my_principal = my_database
-        .principals
-        .get(&"bob".to_string())
-        .cloned()
-        .expect("couldnt find my_principal");
-    match my_principal {
-        VPrincipal::Anyone(ref mut my_delegations) => println!("{:?}", my_delegations.delegations),
-        VPrincipal::User(ref mut my_delegations, _) => println!("{:?}", my_delegations.delegations),
-        VPrincipal::Admin(_) => println!("got admin"),
-    }
-
     // check for correct permissions
     assert_eq!(
         my_database.check_right(
@@ -187,6 +176,22 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
 
     //add principals to database after anyone has some permissions
     my_database.create_principal(&"alice".to_string(), &hash("alice_pass".to_string()));
+
+    // check for correct permissions
+    assert_eq!(
+        my_database.check_right(&Target::Variable("my_var0".to_string()), &Right::Read, &"alice".to_string()) &&
+            my_database.check_right(&Target::Variable("my_var0".to_string()), &Right::Write, &"alice".to_string()) &&
+            my_database.check_right(&Target::Variable("my_var0".to_string()), &Right::Append, &"alice".to_string()) &&
+            my_database.check_right(&Target::Variable("my_var0".to_string()), &Right::Delegate, &"alice".to_string()),
+        true
+    );
+
+    //alice created my_var
+    my_database.delegate(&Target::Variable("my_var1".to_string()), &"admin".to_string(), &Right::Read, &"alice".to_string());
+    my_database.delegate(&Target::Variable("my_var1".to_string()), &"admin".to_string(), &Right::Write, &"alice".to_string());
+    my_database.delegate(&Target::Variable("my_var1".to_string()), &"admin".to_string(), &Right::Append, &"alice".to_string());
+    my_database.delegate(&Target::Variable("my_var1".to_string()), &"admin".to_string(), &Right::Delegate, &"alice".to_string());
+
 
     Ok(())
 }
