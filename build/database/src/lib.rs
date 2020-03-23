@@ -3,9 +3,9 @@ use std::collections::{HashMap, VecDeque};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Database {
-    principals: HashMap<String, Box<VPrincipal>>,
+    principals: HashMap<String, VPrincipal>,
     variables: HashMap<String, Value>,
-    default: Box<VPrincipal>,
+    default: String,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -30,7 +30,7 @@ pub enum Value {
 #[derive(Clone, PartialEq, Eq, Debug)]
 struct Delegation {
     target: Target,
-    delegator: Box<VPrincipal>,
+    delegator: String,
     right: Right,
 }
 
@@ -50,23 +50,23 @@ pub enum Right {
 
 impl Database {
     pub fn new(admin_hash: [u8; 32]) -> Database {
-        let mut principals: HashMap<String, Box<VPrincipal>> = HashMap::new();
-        principals.insert("admin".to_string(), Box::new(VPrincipal::Admin(admin_hash)));
-        let anyone = Box::new(VPrincipal::Anyone(Principal {
+        let mut principals = HashMap::new();
+        principals.insert("admin".to_string(), VPrincipal::Admin(admin_hash));
+        let anyone = VPrincipal::Anyone(Principal {
             delegations: Vec::new(),
-        }));
+        });
         principals.insert("anyone".to_string(), anyone.clone());
         Database {
             principals,
             variables: HashMap::new(),
-            default: anyone,
+            default: "anyone".to_string(),
         }
     }
 
     pub fn check_pass(&self, principal: &String, hash: &[u8; 32]) -> bool {
         self.principals
             .get(principal)
-            .map(|principal| match **principal {
+            .map(|principal| match *principal {
                 VPrincipal::Anyone(_) => false,
                 VPrincipal::User(_, checked) | VPrincipal::Admin(checked) => &checked == hash,
             })
@@ -81,18 +81,14 @@ impl Database {
         right: &Right,
         delegated: &String,
     ) {
-        let delegator = self
+        assert!(self.principals.contains_key(delegator));
+        let pdelegated = self
             .principals
-            .get(delegator)
-            .expect("Precondition of delegator existence not met.");
-        let delegated = self
-            .principals
-            .get(delegated)
-            .cloned()
+            .get_mut(delegated)
             .expect("Precondition of delegated existence not met.");
-        match *delegated {
+        match pdelegated {
             VPrincipal::Admin(_) => {}
-            VPrincipal::Anyone(mut p) | VPrincipal::User(mut p, _) => {
+            VPrincipal::Anyone(ref mut p) | VPrincipal::User(ref mut p, _) => {
                 let delegation = Delegation {
                     target: target.clone(),
                     delegator: delegator.clone(),
@@ -100,7 +96,7 @@ impl Database {
                 };
                 p.delegations.push(delegation);
             }
-        }
+        };
     }
 
     /// Preconditions: delegator and delegated must exist, you should check if acting principal has right
@@ -111,18 +107,14 @@ impl Database {
         right: &Right,
         delegated: &String,
     ) {
-        let delegator = self
-            .principals
-            .get(delegator)
-            .expect("Precondition of delegator existence not met.");
+        assert!(self.principals.contains_key(delegator));
         let delegated = self
             .principals
-            .get(delegated)
-            .cloned()
+            .get_mut(delegated)
             .expect("Precondition of delegated existence not met.");
-        match *delegated {
+        match delegated {
             VPrincipal::Admin(_) => {}
-            VPrincipal::Anyone(mut p) | VPrincipal::User(mut p, _) => {
+            VPrincipal::Anyone(ref mut p) | VPrincipal::User(ref mut p, _) => {
                 let delegation = Delegation {
                     target: target.clone(),
                     delegator: delegator.clone(),
@@ -142,23 +134,22 @@ impl Database {
     pub fn create_principal(&mut self, principal: &String, hash: &[u8; 32]) {
         self.principals.insert(
             principal.clone(),
-            Box::new(VPrincipal::User(
+            VPrincipal::User(
                 Principal {
                     delegations: Vec::new(),
                 },
                 hash.clone(),
-            )),
+            ),
         );
     }
 
     /// Preconditions: principal must exist, and you should check if current user is admin or principal
-    pub fn change_password(&self, principal: &String, hash: &[u8; 32]) {
+    pub fn change_password(&mut self, principal: &String, hash: &[u8; 32]) {
         let mut principal = self
             .principals
-            .get(principal)
-            .cloned()
+            .get_mut(principal)
             .expect("Precondition of principal existence not met.");
-        match *principal {
+        match principal {
             VPrincipal::Anyone(_) => {}
             VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) => {
                 *existing = hash.clone()
@@ -171,9 +162,8 @@ impl Database {
         let principal = self
             .principals
             .get(principal)
-            .cloned()
             .expect("Precondition of principal existence not met.");
-        match *principal {
+        match principal {
             VPrincipal::Admin(_) => true,
             VPrincipal::Anyone(p) | VPrincipal::User(p, _) => {
                 let mut searched: Vec<&Delegation> = Vec::new();
@@ -188,7 +178,7 @@ impl Database {
                         continue;
                     }
                     searched.push(curr);
-                    match &*curr.delegator {
+                    match self.principals.get(&curr.delegator).unwrap() {
                         VPrincipal::Admin(_) => return true,
                         VPrincipal::Anyone(p) | VPrincipal::User(p, _) => p
                             .delegations
@@ -217,3 +207,6 @@ impl Database {
         self.variables.get_mut(variable)
     }
 }
+
+#[cfg(test)]
+mod tests;

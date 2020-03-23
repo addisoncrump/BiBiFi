@@ -114,7 +114,7 @@ impl BiBiFi {
                         }
                         PrimitiveCommand::Assignment(a) => {
                             let name = match a.variable {
-                                Variable::Variable(i) | Variable::Member(i, _) => &i.name,
+                                Variable::Variable(i) | Variable::Member(i, _) => (&i.name).clone(),
                             };
                         }
                         PrimitiveCommand::Append(_) => {}

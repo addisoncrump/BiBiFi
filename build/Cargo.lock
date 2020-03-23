@@ -38,6 +38,7 @@ dependencies = [
 name = "bibifi-database"
 version = "0.1.0"
 dependencies = [
+ "bibifi-util",
  "serde",
  "serde_json",
 ]
