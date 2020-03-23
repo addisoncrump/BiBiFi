@@ -1,4 +1,4 @@
-//This code was modified from code posted by Reddit user u/nsossonko 
+//This code was modified from code posted by Reddit user u/nsossonko
 //at https://www.reddit.com/r/rust/comments/e82v07/my_introduction_to_tokio_streaming/
 
 use std::env;
@@ -7,7 +7,7 @@ use tokio::net::TcpListener;
 // `AsyncBufReadExt` even though we don't explicitly "use" it in our code.
 // This is necessary so that the BufReader will have methods from that trait.
 // Same goes for AsyncWriteExt.
-use tokio::io::{BufReader, AsyncBufReadExt, AsyncWriteExt};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 // The easiest way to start the tokio runtime is with this decorator
 #[tokio::main]
@@ -41,7 +41,7 @@ async fn main() -> Result<(), ()> {
             let mut buf_reader = BufReader::new(reader);
             let mut buf = vec![];
             let mut ast_count = 0; //counts the number strings with only a single asterisk
-            let mut clear_buf = 0; 
+            let mut clear_buf = 0;
             // Continuously read one line at a time from this stream
             loop {
                 match buf_reader.read_until(b'*', &mut buf).await {
@@ -58,20 +58,19 @@ async fn main() -> Result<(), ()> {
 
                         // Create a String out of the u8 buffer of characters
                         let buf_string = String::from_utf8_lossy(&buf);
-                        if (ast_count == 0) && (n>1){
+                        if (ast_count == 0) && (n > 1) {
                             ast_count = ast_count + 1;
-                        }
-                        else if (ast_count > 0) && (n==1){
+                        } else if (ast_count > 0) && (n == 1) {
                             ast_count = ast_count + 1;
-                        }else {
+                        } else {
                             ast_count = 0;
                             clear_buf = 1;
                         }
-                        println!("count: {}",ast_count);
+                        println!("count: {}", ast_count);
 
-                        if ast_count == 3{
+                        if ast_count == 3 {
                             // Printout the message received
-                            println!("Received message: {}",buf_string);
+                            println!("Received message: {}", buf_string);
 
                             //TODO: Pass to parser here
 
@@ -80,22 +79,20 @@ async fn main() -> Result<(), ()> {
                             // Send off the response.
                             match writer.write_all(&message.as_bytes()).await {
                                 Ok(_n) => println!("Response sent"),
-                                Err(e) => println!(
-                                    "Error sending response: {}", e
-                                )
+                                Err(e) => println!("Error sending response: {}", e),
                             }
                             // Clear the buffer so that this line doesn't get mixed
                             // with the next lines
                             clear_buf = 1;
-                            ast_count = 0; 
+                            ast_count = 0;
                         }
-                        
-                        if clear_buf == 1{
+
+                        if clear_buf == 1 {
                             buf.clear();
-                            clear_buf=0;
+                            clear_buf = 0;
                         }
-                    },
-                    Err(e) => println!("Error receiving message: {}", e)
+                    }
+                    Err(e) => println!("Error receiving message: {}", e),
                 }
             }
         });
