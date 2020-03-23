@@ -1,2 +1,8 @@
 target/
 .idea/
+
+*.sw*
+*_save*
+*_temp*
+my_*
+
