@@ -125,6 +125,11 @@ impl Database {
         }
     }
 
+    /// Preconditions: none, but you should check if the acting principal is admin
+    pub fn set_default_delegator(&mut self, delegator: &String) {
+        self.def_delegator = delegator.clone();
+    }
+
     /// Preconditions: none
     pub fn check_principal(&self, principal: &String) -> bool {
         self.principals.contains_key(principal)
