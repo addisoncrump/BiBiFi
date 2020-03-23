@@ -217,3 +217,6 @@ impl Database {
         self.variables.get_mut(variable)
     }
 }
+
+#[cfg(test)]
+mod tests;
