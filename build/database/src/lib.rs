@@ -126,6 +126,39 @@ impl Database {
         }
     }
 
+    /// Preconditions: none
+    pub fn check_principal(&self, principal: String) -> bool {
+        self.principals.contains_key(&principal)
+    }
+
+    /// Preconditions: none, but you should check if principal exists first
+    pub fn create_principal(&mut self, principal: String, hash: [u8; 32]) {
+        self.principals.insert(
+            principal,
+            Box::new(VPrincipal::User(
+                Principal {
+                    delegations: Vec::new(),
+                },
+                hash,
+            )),
+        );
+    }
+
+    /// Preconditions: principal must exist, and you should check if current user is admin or principal
+    pub fn change_password(&self, principal: String, hash: [u8; 32]) {
+        let mut principal = self
+            .principals
+            .get(&principal)
+            .cloned()
+            .expect("Precondition of principal existence not met.");
+        match *principal {
+            VPrincipal::Anyone(_) => {}
+            VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) => {
+                *existing = hash
+            }
+        }
+    }
+
     /// Preconditions: principal must exist
     pub fn check_right(&self, target: Target, right: Right, principal: String) -> bool {
         let principal = self
