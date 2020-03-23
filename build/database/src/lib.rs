@@ -23,7 +23,7 @@ struct Principal {
 #[derive(Clone, PartialEq, Eq, Debug, Serialize)]
 pub enum Value {
     Immediate(String),
-    List(Vec<Box<Value>>),
+    List(Vec<Value>),
     FieldVals(HashMap<String, String>),
 }
 

@@ -1,5 +1,6 @@
 use crate::status::{Entry, Status};
 use bibifi_database::{Database, Value};
+use bibifi_database::{Right, Target};
 use bibifi_parser::parse;
 use bibifi_parser::types::*;
 use std::collections::HashMap;
@@ -231,40 +232,40 @@ impl BiBiFi {
         program: &Program,
         cp: &Append,
     ) -> bool {
-        /*if database.check_principal(&program.principal.ident.name) { //check if principle exists
-            sender
-                .send(Entry {
-                    status: Status::FAILED,
-                    output: None,
-                })
-                .unwrap();
-            false
-        }else if database.check_right(&Target::Variable(name), &Right::Write, &program.principal.ident.name){ //Have write permission
-            sender
-                .send(Entry {
-                    status: Status::DENIED,
-                    output: None,
-                })
-                .unwrap();
-            false
-        }else if database.check_right(&Target::Variable.name, &Right::Append, &program.principal.ident.name){ //Have append permission
-            sender
-                .send(Entry {
-                    status: Status::DENIED,
-                    output: None,
-                })
-                .unwrap();
-            false
-        } else {
-
-            sender
-                .send(Entry {
-                    status: Status::APPEND,
-                    output: None,
-                })
-                .unwrap();
-            true
-        }*/
+        if let Variable::Variable(i) = &cp.variable {
+            if let Some(ref mut value) = database.get_mut(&i.name) {
+                if let Value::List(list) = value {
+                    return if database.check_right(
+                        &Target::Variable(i.name.clone()),
+                        &Right::Append,
+                        &program.principal.ident.name,
+                    ) {
+                        // TODO append
+                        sender
+                            .send(Entry {
+                                status: Status::APPEND,
+                                output: None,
+                            })
+                            .unwrap();
+                        true
+                    } else {
+                        sender
+                            .send(Entry {
+                                status: Status::DENIED,
+                                output: None,
+                            })
+                            .unwrap();
+                        false
+                    };
+                }
+            }
+        }
+        sender
+            .send(Entry {
+                status: Status::FAILED,
+                output: None,
+            })
+            .unwrap();
         false
     }
 
