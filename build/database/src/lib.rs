@@ -23,7 +23,7 @@ struct Principal {
 #[derive(Clone, PartialEq, Eq, Debug, Serialize)]
 pub enum Value {
     Immediate(String),
-    List(Vec<Box<Value>>),
+    List(Vec<Value>),
     FieldVals(HashMap<String, String>),
 }
 
@@ -166,7 +166,7 @@ impl Database {
 
     /// Preconditions: principal must exist, and you should check if current user is admin or principal
     pub fn change_password(&mut self, principal: &String, hash: &[u8; 32]) {
-        let mut principal = self
+        let principal = self
             .principals
             .get_mut(principal)
             .expect("Precondition of principal existence not met.");
