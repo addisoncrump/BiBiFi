@@ -1,8 +1,11 @@
 use crate::status::{Entry, Status};
+use bibifi_database::Right::Read;
 use bibifi_database::{Database, Value};
 use bibifi_database::{Right, Target};
 use bibifi_parser::parse;
+use bibifi_parser::types::Value as ParserValue;
 use bibifi_parser::types::*;
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -222,7 +225,18 @@ impl BiBiFi {
         program: &Program,
         cp: &Assignment,
     ) -> bool {
-        false
+        if let Variable::Variable(i) = &cp.variable {
+            // TODO
+            true
+        } else {
+            sender
+                .send(Entry {
+                    status: Status::FAILED,
+                    output: None,
+                })
+                .unwrap();
+            false
+        }
     }
 
     fn append(
@@ -233,55 +247,17 @@ impl BiBiFi {
         cp: &Append,
     ) -> bool {
         if let Variable::Variable(i) = &cp.variable {
-            if let Some(ref mut value) = database.get_mut(&i.name) {
-                if let Value::List(list) = value {
-                    return if database.check_right(
-                        &Target::Variable(i.name.clone()),
-                        &Right::Append,
-                        &program.principal.ident.name,
-                    ) || database.check_right(
-                        &Target::Variable(i.name.clone()),
-                        &Right::Write,
-                        &program.principal.ident.name,
-                    ) {
-                        // TODO append
-                        sender
-                            .send(Entry {
-                                status: Status::APPEND,
-                                output: None,
-                            })
-                            .unwrap();
-                        true
-                    } else {
-                        sender
-                            .send(Entry {
-                                status: Status::DENIED,
-                                output: None,
-                            })
-                            .unwrap();
-                        false
-                    };
-                }
-            } else if let Some(ref mut value) = locals.get_mut(&i.name) {
-                if let Value::List(list) = value {
-                    // TODO append
-                    sender
-                        .send(Entry {
-                            status: Status::APPEND,
-                            output: None,
-                        })
-                        .unwrap();
-                    return true;
-                }
-            }
+            // TODO
+            true
+        } else {
+            sender
+                .send(Entry {
+                    status: Status::FAILED,
+                    output: None,
+                })
+                .unwrap();
+            false
         }
-        sender
-            .send(Entry {
-                status: Status::FAILED,
-                output: None,
-            })
-            .unwrap();
-        false
     }
 
     fn local_assignment(
@@ -332,5 +308,169 @@ impl BiBiFi {
         p: &Principal,
     ) -> bool {
         false
+    }
+
+    fn evaluate(
+        database: &mut Database,
+        locals: &mut HashMap<String, Value>,
+        program: &Program,
+        expr: &Expr,
+    ) -> Result<Value, Entry> {
+        match expr {
+            Expr::Value(v) => BiBiFi::evaluate_value(database, locals, program, v),
+            Expr::EmptyList => Ok(Value::List(Vec::new())),
+            Expr::FieldVals(fv) => BiBiFi::evaluate_fieldvals(database, locals, program, fv),
+        }
+    }
+
+    fn get_variable(
+        database: &mut Database,
+        locals: &mut HashMap<String, Value>,
+        program: &Program,
+        variable: &String,
+        rights: &[Right],
+    ) -> Result<Value, Entry> {
+        if let Some(value) = database.get_mut(variable) {
+            let value = value.clone();
+            if rights.iter().any(|right| {
+                database.check_right(
+                    &Target::Variable(variable.clone()),
+                    right,
+                    &program.principal.ident.name,
+                )
+            }) {
+                Ok(value)
+            } else {
+                Err(Entry {
+                    status: Status::DENIED,
+                    output: None,
+                })
+            }
+        } else if let Some(value) = locals.get(variable) {
+            Ok(value.clone())
+        } else {
+            Err(Entry {
+                status: Status::FAILED,
+                output: None,
+            })
+        }
+    }
+
+    fn modify_variable<F>(
+        database: &mut Database,
+        locals: &mut HashMap<String, Value>,
+        program: &Program,
+        variable: &String,
+        rights: &[Right],
+        f: F,
+    ) -> Option<Entry>
+    where
+        F: FnOnce(Value) -> Result<Value, Entry>,
+    {
+        if let Some(value) = database.get(variable) {
+            if rights.iter().any(|right| {
+                database.check_right(
+                    &Target::Variable(variable.clone()),
+                    right,
+                    &program.principal.ident.name,
+                )
+            }) {
+                match f(value.clone()) {
+                    Ok(value) => {
+                        database.set(variable, &value);
+                        None
+                    }
+                    Err(e) => Some(e),
+                }
+            } else {
+                Some(Entry {
+                    status: Status::DENIED,
+                    output: None,
+                })
+            }
+        } else if let Some(value) = locals.get(variable) {
+            match f(value.clone()) {
+                Ok(value) => {
+                    database.set(variable, &value);
+                    None
+                }
+                Err(e) => Some(e),
+            }
+        } else {
+            Some(Entry {
+                status: Status::FAILED,
+                output: None,
+            })
+        }
+    }
+
+    fn evaluate_value(
+        database: &mut Database,
+        locals: &mut HashMap<String, Value>,
+        program: &Program,
+        value: &ParserValue,
+    ) -> Result<Value, Entry> {
+        match value {
+            ParserValue::Variable(v) => match v {
+                Variable::Variable(i) | Variable::Member(i, _) => {
+                    BiBiFi::get_variable(database, locals, program, &i.name, &[Read])
+                }
+            },
+            ParserValue::String(s) => Ok(Value::Immediate(s.clone())),
+        }
+    }
+
+    fn evaluate_fieldvals(
+        database: &mut Database,
+        locals: &mut HashMap<String, Value>,
+        program: &Program,
+        value: &Vec<Assignment>,
+    ) -> Result<Value, Entry> {
+        let mut map = HashMap::new();
+        for a in value {
+            match &a.variable {
+                Variable::Variable(i) => {
+                    if map.contains_key(&i.name) {
+                        return Err(Entry {
+                            // duplicate entry
+                            status: Status::FAILED,
+                            output: None,
+                        });
+                    }
+                    map.insert(
+                        i.name.clone(),
+                        match &a.expr {
+                            Expr::Value(value) => {
+                                match BiBiFi::evaluate_value(database, locals, program, value) {
+                                    Ok(value) => match value {
+                                        Value::Immediate(i) => i,
+                                        Value::List(_) | Value::FieldVals(_) => {
+                                            return Err(Entry {
+                                                status: Status::FAILED,
+                                                output: None,
+                                            })
+                                        }
+                                    },
+                                    Err(e) => return Err(e),
+                                }
+                            }
+                            Expr::EmptyList | Expr::FieldVals(_) => {
+                                return Err(Entry {
+                                    status: Status::FAILED,
+                                    output: None,
+                                })
+                            }
+                        },
+                    );
+                }
+                Variable::Member(_, _) => {
+                    return Err(Entry {
+                        status: Status::FAILED,
+                        output: None,
+                    })
+                }
+            }
+        }
+        Ok(Value::FieldVals(map))
     }
 }
