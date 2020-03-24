@@ -224,7 +224,7 @@ impl Database {
     }
 
     /// Preconditions: non, but you should probably check if the user has rights
-    pub fn get(&mut self, variable: &String) -> Option<&Value> {
+    pub fn get(&self, variable: &String) -> Option<&Value> {
         self.variables.get(variable)
     }
 

@@ -1,7 +1,7 @@
 use bibifi_database::Value;
 use serde::Serialize;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Eq, PartialEq)]
 pub struct Entry {
     pub status: Status,
     #[serde(skip_serializing_if = "Option::is_none")]

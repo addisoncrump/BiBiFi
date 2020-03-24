@@ -131,9 +131,13 @@ impl BiBiFi {
                                 })
                                 .unwrap();
                         }
+                        return Some(database);
                     }
-                    Command::Return(_) => {}
-                    _ => {}
+                    Command::Return(_) => {
+                        // TODO
+                        return Some(database);
+                    }
+                    _ => {} // unreachable
                 }
             }
         }
@@ -474,3 +478,6 @@ impl BiBiFi {
         Ok(Value::FieldVals(map))
     }
 }
+
+#[cfg(test)]
+mod tests;

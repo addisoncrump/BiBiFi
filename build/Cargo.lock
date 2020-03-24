@@ -57,6 +57,7 @@ version = "0.1.0"
 dependencies = [
  "bibifi-database",
  "bibifi-parser",
+ "bibifi-util",
  "serde",
  "tokio",
 ]
