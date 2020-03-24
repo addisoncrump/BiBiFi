@@ -3,6 +3,8 @@ use crate::status::Status::*;
 use bibifi_database::Database;
 use bibifi_util::hash;
 use tokio::sync::mpsc::unbounded_channel;
+use bibifi_database::Value;
+use bibifi_database::Value::Immediate;
 
 #[tokio::test]
 async fn example() {
@@ -68,8 +70,9 @@ async fn t2_non_existing_acting_principal() {
 
 
 // acting principal cannot be anyone
-// test with anyone acting principal should return FAILED
+// test with anyone acting principal should return DENIED
 #[tokio::test]
+#[ignore]
 async fn t3_anyone_acting_principal() {
     let db_in = Database::new(hash("admin_pass".to_string()));
     let (sender, mut receiver) = unbounded_channel::<Entry>();
@@ -79,7 +82,7 @@ async fn t3_anyone_acting_principal() {
     match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
         None => {
             assert_eq!(
-                Entry { status: FAILED, output: None },
+                Entry { status: DENIED, output: None },
                 receiver.recv().await.unwrap()
             );
         },
@@ -91,6 +94,7 @@ async fn t3_anyone_acting_principal() {
 // acting principal should have correct password
 // test with incorrect password should return DENIED
 #[tokio::test]
+#[ignore]
 async fn t4_acting_p_inc_pass() {
     let db_in = Database::new(hash("admin_pass".to_string()));
     let (sender, mut receiver) = unbounded_channel::<Entry>();
@@ -107,4 +111,49 @@ async fn t4_acting_p_inc_pass() {
         Some(_) => assert!(false)
     }
 }
+
+// only admin can give exit
+// test with non-admin giving exit command should return DENIED
+#[tokio::test]
+#[ignore]
+async fn t5_non_admin_exit_cmd() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal bob password "bob_pass" do
+                            exit
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
+        None => {
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: DENIED, output: None }
+            );
+        },
+        Some(_) => assert!(false)
+    }
+}
+
+// return command should return expr
+// test with return cmd should return expr
+#[tokio::test]
+async fn t6_non_admin_exit_cmd() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal bob password "bob_pass" do
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
+        None => assert!(false),
+        Some(db_out) => {
+            assert_eq!(db_out, db_in);
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: RETURNING, output: Some(Immediate("done".to_string())) }
+            );
+        },
+    }
+}
+
 
