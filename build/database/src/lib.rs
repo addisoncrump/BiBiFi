@@ -455,4 +455,5 @@ impl Database {
 }
 
 #[cfg(test)]
+#[forbid(unused_must_use)]
 mod tests;
