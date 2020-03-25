@@ -119,11 +119,11 @@ async fn t4_acting_p_inc_pass() {
 #[tokio::test]
 async fn t5_non_admin_exit_cmd() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
-    db_in.create_principal(
+    assert_eq!(db_in.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let program = r#"as principal bob password "bob_pass" do
                             exit
                             ***"#;
@@ -146,11 +146,11 @@ async fn t5_non_admin_exit_cmd() {
 #[tokio::test]
 async fn t6_non_admin_exit_cmd() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
-    db_in.create_principal(
+    assert_eq!(db_in.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let program = r#"as principal bob password "bob_pass" do
                             return "done"
                             ***"#;
@@ -174,11 +174,11 @@ async fn t6_non_admin_exit_cmd() {
 async fn t7_create_principal() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
     let mut db_out_exp = db_in.clone();
-    db_out_exp.create_principal(
+    assert_eq!(db_out_exp.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let program = r#"as principal admin password "admin_pass" do
                             create principal bob "bob_pass"
                             return "done"
@@ -209,11 +209,11 @@ async fn t7_create_principal() {
 #[tokio::test]
 async fn t8_non_admin_create_principal() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
-    db_in.create_principal(
+    assert_eq!(db_in.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let program = r#"as principal bob password "bob_pass" do
                             create principal alice "alice_pass"
                             return "done"
@@ -237,11 +237,11 @@ async fn t8_non_admin_create_principal() {
 #[tokio::test]
 async fn t9_recreate_principal() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
-    db_in.create_principal(
+    assert_eq!(db_in.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let program = r#"as principal admin password "admin_pass" do
                             create principal anyone "anyone_pass"
                             return "done"
@@ -264,17 +264,17 @@ async fn t9_recreate_principal() {
 #[tokio::test]
 async fn t10_change_password() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
-    db_in.create_principal(
+    assert_eq!(db_in.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let mut db_out_exp = Database::new(hash("admin_pass".to_string()));
-    db_out_exp.create_principal(
+    assert_eq!(db_out_exp.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_new_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let program = r#"as principal bob password "bob_pass" do
                             change password bob "bob_new_pass"
                             return "done"
@@ -305,11 +305,11 @@ async fn t10_change_password() {
 async fn t11_admin_change_password() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
     let mut db_out_exp = Database::new(hash("admin_pass".to_string()));
-    db_out_exp.create_principal(
+    assert_eq!(db_out_exp.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("bob_new_pass".to_string()),
-    );
+    ), DBStatus::SUCCESS);
     let program = r#"as principal admin password "admin_pass" do
                             create principal bob "bob_pass"
                             change password bob "bob_new_pass"
@@ -340,79 +340,89 @@ async fn t11_admin_change_password() {
     }
 }
 
-//// principal has to exist to change password
-//// test to change password fr non-existing user
-//#[tokio::test]
-//#[ignore]
-//async fn t12_non_exist_pric_change_password() {
-//    let mut db_in = Database::new(hash("admin_pass".to_string()));
-//    let mut db_out_exp = Database::new(hash("admin_pass".to_string()));
-//    db_out_exp.create_principal(&"bob".to_string(), &hash("bob_new_pass".to_string()));
-//    let (sender, mut receiver) = unbounded_channel::<Entry>();
-//    let program = r#"as principal admin password "admin_pass" do
-//                            create principal bob "bob_pass"
-//                            change password admin "bob_new_pass"
-//                            return "done"
-//                            ***"#;
-//    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
-//        None => {
-//            assert_eq!(
-//                receiver.recv().await.unwrap(),
-//                Entry { status: FAILED, output: None }
-//            );
-//        },
-//        Some(_) => assert!(false),
-//    }
-//}
-//
-//// cannot set without permissions
-//// test to set variable without permissions
-//#[tokio::test]
-//async fn t13_set_without_permission() {
-//    let mut db_in = Database::new(hash("admin_pass".to_string()));
-//    db_in.set(&"my_var".to_string(), &Value::Immediate("wolla".to_string()));
-//    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
-//    let (sender, mut receiver) = unbounded_channel::<Entry>();
-//    let program = r#"as principal bob password "bob_pass" do
-//                            set my_var = "hi"
-//                            return "done"
-//                            ***"#;
-//    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
-//        None => {
-//            assert_eq!(
-//                receiver.recv().await.unwrap(),
-//                Entry { status: DENIED, output: None }
-//            );
-//        },
-//        Some(_) => assert!(false),
-//    }
-//}
-//
-//// first issues of expr need to be resolved
-//// test with denied in lhs ans failed in rhs
-//#[tokio::test]
-//#[ignore]
-//async fn t14_lhs_rhs_pref() {
-//    let mut db_in = Database::new(hash("admin_pass".to_string()));
-//    db_in.set(&"my_var".to_string(), &Value::Immediate("wolla".to_string()));
-//    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
-//    let (sender, mut receiver) = unbounded_channel::<Entry>();
-//    let program = r#"as principal bob password "bob_pass" do
-//                            set my_var = y
-//                            return "done"
-//                            ***"#;
-//    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
-//        None => {
-//            assert_eq!(
-//                receiver.recv().await.unwrap(),
-//                Entry { status: FAILED, output: None }
-//            );
-//        },
-//        Some(_) => assert!(false),
-//    }
-//}
-//
-//
+// principal has to exist to change password
+// test to change password fr non-existing user
+#[tokio::test]
+async fn t12_non_exist_pric_change_password() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    let mut db_out_exp = Database::new(hash("admin_pass".to_string()));
+    assert_eq!(db_out_exp.create_principal(&"admin".to_string(), &"bob".to_string(),
+                                           &hash("bob_new_pass".to_string())), DBStatus::SUCCESS);
+    let program = r#"as principal admin password "admin_pass" do
+                            create principal bob "bob_pass"
+                            change password alice "bob_new_pass"
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string()).await {
+        (out_message, None) => {
+            assert_eq!(
+                vec![Entry {
+                    status: FAILED,
+                    output: None
+                }],
+                out_message
+            );
+        }
+        _ => assert!(false),
+    }
+}
+
+
+// cannot set without permissions
+// test to set variable without permissions
+#[tokio::test]
+async fn t13_set_without_permission() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    assert_eq!(db_in.set(&"admin".to_string(), &"my_var".to_string(), &Value::Immediate("wolla".to_string())), DBStatus::SUCCESS);
+    assert_eq!(db_in.create_principal(&"admin".to_string(), &"bob".to_string(), &hash("bob_pass".to_string())), DBStatus::SUCCESS);
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal bob password "bob_pass" do
+                            set my_var = "hi"
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string()).await {
+        (out_message, None) => {
+            assert_eq!(
+                vec![Entry {
+                    status: DENIED,
+                    output: None
+                }],
+                out_message
+            );
+        }
+        _ => assert!(false),
+    }
+}
+
+
+// first issues of expr need to be resolved
+// test with denied in lhs ans failed in rhs
+#[tokio::test]
+async fn t14_lhs_rhs_pref() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    assert_eq!(db_in.set(&"user".to_string(), &"my_var".to_string(), &Value::Immediate("wolla".to_string())), DBStatus::SUCCESS);
+    assert_eq!(db_in.create_principal(&"user".to_string(), &"bob".to_string(), &hash("bob_pass".to_string())), DBStatus::SUCCESS);
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal bob password "bob_pass" do
+                            set my_var = y
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string()).await {
+        (out_message, None) => {
+            assert_eq!(
+                vec![Entry {
+                    status: FAILED,
+                    output: None
+                }],
+                out_message
+            );
+        }
+        _ => assert!(false),
+    }
+}
+
+
+
 //// append permission is enough fr append
 //#[tokio::test]
 //async fn t15_append() {
