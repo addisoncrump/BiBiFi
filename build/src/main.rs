@@ -97,23 +97,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if let Some(entries) = runtime
                 .submit(buf_string.to_string(), sender)
-                .then(|_| async move { tokio::stream::StreamExt::next(&mut receiver).await })
+                .and_then(
+                    |_| async move { Ok(tokio::stream::StreamExt::next(&mut receiver).await) },
+                )
                 .await
+                .unwrap()
             {
                 for entry in entries {
                     match buf_writer
-                        .write_all(serde_json::to_string(&entry).unwrap().as_bytes())
+                        .write_all(
+                            format!("{}\n", serde_json::to_string(&entry).unwrap()).as_bytes(),
+                        )
                         .await
                     {
                         Ok(_) => {
                             if entry.status == EXITING {
                                 std::process::exit(0)
                             }
+                            println!("{}", serde_json::to_string(&entry).unwrap());
+                            buf_writer.flush().await;
                         }
                         Err(_) => break, // stream closed
                     }
                 }
             }
+            drop(buf_reader);
+            drop(buf_writer);
         });
     }
 
