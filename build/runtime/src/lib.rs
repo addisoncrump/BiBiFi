@@ -370,8 +370,8 @@ impl BiBiFi {
                                         let mut modified = list.iter().map(modification);
                                         if let Some(bad) = modified.find(|item| item.is_err()) {
                                             match bad {
-                                                Ok(_) => panic!(),
                                                 Err(e) => e,
+                                                _ => panic!(),
                                             }
                                         } else {
                                             locals.insert(
@@ -401,23 +401,22 @@ impl BiBiFi {
                                             let mut modified = list.iter().map(modification);
                                             if let Some(bad) = modified.find(|item| item.is_err()) {
                                                 match bad {
-                                                    Ok(_) => panic!(),
                                                     Err(e) => e,
+                                                    _ => panic!(),
                                                 }
                                             } else {
-                                                database.set(
-                                                    &program.principal.ident.name,
-                                                    &listi.name,
-                                                    &Value::List(
-                                                        modified
-                                                            .map(|item| item.unwrap())
-                                                            .collect(),
+                                                Entry::from(
+                                                    database.set(
+                                                        &program.principal.ident.name,
+                                                        &listi.name,
+                                                        &Value::List(
+                                                            modified
+                                                                .map(|item| item.unwrap())
+                                                                .collect(),
+                                                        ),
                                                     ),
-                                                );
-                                                Entry {
-                                                    status: Status::FOREACH,
-                                                    output: None,
-                                                }
+                                                    Status::FOREACH,
+                                                )
                                             }
                                         }
                                         _ => Entry {
