@@ -400,8 +400,8 @@ async fn t13_set_without_permission() {
 #[tokio::test]
 async fn t14_lhs_rhs_pref() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
-    assert_eq!(db_in.set(&"user".to_string(), &"my_var".to_string(), &Value::Immediate("wolla".to_string())), DBStatus::SUCCESS);
-    assert_eq!(db_in.create_principal(&"user".to_string(), &"bob".to_string(), &hash("bob_pass".to_string())), DBStatus::SUCCESS);
+    assert_eq!(db_in.set(&"admin".to_string(), &"my_var".to_string(), &Value::Immediate("wolla".to_string())), DBStatus::SUCCESS);
+    assert_eq!(db_in.create_principal(&"admin".to_string(), &"bob".to_string(), &hash("bob_pass".to_string())), DBStatus::SUCCESS);
     let (sender, mut receiver) = unbounded_channel::<Entry>();
     let program = r#"as principal bob password "bob_pass" do
                             set my_var = y
@@ -422,35 +422,40 @@ async fn t14_lhs_rhs_pref() {
 }
 
 
+// append permission is enough fr append
+#[tokio::test]
+async fn t15_append() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    assert_eq!(db_in.create_principal(&"admin".to_string(), &"bob".to_string(), &hash("bob_pass".to_string())), DBStatus::SUCCESS);
+    assert_eq!(db_in.set(&"admin".to_string(), &"my_var".to_string(), &Value::List(vec![Value::Immediate("wolla".to_string())])), DBStatus::SUCCESS);
+    assert_eq!(db_in.delegate(&"admin".to_string(), &Target::Variable("my_var".to_string()), &"admin".to_string(), &Right::Append, &"bob".to_string()), DBStatus::SUCCESS);
+    let mut db_out_exp = Database::new(hash("admin_pass".to_string()));
+    assert_eq!(db_out_exp.create_principal(&"admin".to_string(), &"bob".to_string(), &hash("bob_pass".to_string())), DBStatus::SUCCESS);
+    assert_eq!(db_out_exp.set(&"admin".to_string(), &"my_var".to_string(), &Value::List(vec![Value::Immediate("wolla".to_string()),Value::Immediate("added".to_string())])), DBStatus::SUCCESS);
+    assert_eq!(db_out_exp.delegate(&"admin".to_string(), &Target::Variable("my_var".to_string()), &"admin".to_string(), &Right::Append, &"bob".to_string()), DBStatus::SUCCESS);
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal bob password "bob_pass" do
+                            append to my_var with "added"
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string()).await {
+        (out_message, Some(db_out)) => {
+            assert_eq!(db_out, db_out_exp);
+            assert_eq!(
+                vec![
+                    Entry {
+                        status: APPEND,
+                        output: None
+                    },
+                    Entry {
+                        status: RETURNING,
+                        output: Some(Value::Immediate("done".to_string()))
+                    }
+                ],
+                out_message
+            );
+        }
+        _ => assert!(false),
+    }
+}
 
-//// append permission is enough fr append
-//#[tokio::test]
-//async fn t15_append() {
-//    let mut db_in = Database::new(hash("admin_pass".to_string()));
-//    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
-//    //db_in.set(&"my_var".to_string(), &Value::List(vec![Value::Immediate("wolla".to_string())]));
-//    //db_in.delegate(&Target::Variable("my_var".to_string()), &"admin".to_string(), &Right::Append, &"bob".to_string());
-//    let mut db_out_exp = Database::new(hash("admin_pass".to_string()));
-//    db_out_exp.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
-//    //db_out_exp.set(&"my_var".to_string(), &Value::List(vec![Value::Immediate("uolla".to_string()),Value::Immediate("added".to_string())]));
-//    //db_out_exp.delegate(&Target::Variable("my_var".to_string()), &"admin".to_string(), &Right::Append, &"bob".to_string());
-//    let (sender, mut receiver) = unbounded_channel::<Entry>();
-//    let program = r#"as principal bob password "bob_pass" do
-//                            append to my_var with "added"
-//                            return "done"
-//                            ***"#;
-//    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
-//        None => assert!(false),
-//        Some(db_out) => {
-//            assert_eq!(db_in, db_out_exp);
-//            assert_eq!(
-//                receiver.recv().await.unwrap(),
-//                Entry { status: APPEND, output: None }
-//            );
-//            assert_eq!(
-//                receiver.recv().await.unwrap(),
-//                Entry { status: RETURNING, output: Some(Immediate("done".to_string())) }
-//            );
-//        },
-//    }
-//}
