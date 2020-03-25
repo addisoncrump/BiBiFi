@@ -94,7 +94,6 @@ async fn t3_anyone_acting_principal() {
 // acting principal should have correct password
 // test with incorrect password should return DENIED
 #[tokio::test]
-#[ignore]
 async fn t4_acting_p_inc_pass() {
     let db_in = Database::new(hash("admin_pass".to_string()));
     let (sender, mut receiver) = unbounded_channel::<Entry>();
@@ -115,7 +114,6 @@ async fn t4_acting_p_inc_pass() {
 // only admin can give exit
 // test with non-admin giving exit command should return DENIED
 #[tokio::test]
-#[ignore]
 async fn t5_non_admin_exit_cmd() {
     let mut db_in = Database::new(hash("admin_pass".to_string()));
     db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
@@ -155,5 +153,107 @@ async fn t6_non_admin_exit_cmd() {
         },
     }
 }
+
+
+// create principal should create principal
+#[tokio::test]
+async fn t7_create_principal() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    let mut db_out_exp = db_in.clone();
+    db_out_exp.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal admin password "admin_pass" do
+                            create principal bob "bob_pass"
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
+        None => assert!(false),
+        Some(db_out) => {
+            assert_eq!(db_out, db_out_exp);
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: CREATE_PRINCIPAL, output: None }
+            );
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: RETURNING, output: Some(Immediate("done".to_string())) }
+            );
+        },
+    }
+}
+
+// only admin can create principal
+// test with non-admin creating principal
+#[tokio::test]
+async fn t8_non_admin_create_principal() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal bob password "bob_pass" do
+                            create principal alice "alice_pass"
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
+        None => {
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: DENIED, output: None }
+            );
+        },
+        Some(_) => assert!(false),
+    }
+}
+
+
+// cannot create existing principal
+// test with recreating principal
+#[tokio::test]
+async fn t9_recreate_principal() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal admin password "admin_pass" do
+                            create principal anyone "anyone_pass"
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
+        None => {
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: FAILED, output: None }
+            );
+        },
+        Some(_) => assert!(false),
+    }
+}
+
+// change password
+#[tokio::test]
+async fn t10_change_password() {
+    let mut db_in = Database::new(hash("admin_pass".to_string()));
+    db_in.create_principal(&"bob".to_string(), &hash("bob_pass".to_string()));
+    let mut db_out_exp = Database::new(hash("admin_pass".to_string()));
+    db_out_exp.create_principal(&"bob".to_string(), &hash("bob_new_pass".to_string()));
+    let (sender, mut receiver) = unbounded_channel::<Entry>();
+    let program = r#"as principal bob password "bob_pass" do
+                            change password bob "bob_new_pass"
+                            return "done"
+                            ***"#;
+    match BiBiFi::run_program(db_in.clone(), program.to_string(), sender).await {
+        None => assert!(false),
+        Some(db_out) => {
+            assert_eq!(db_out, db_out_exp);
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: CREATE_PRINCIPAL, output: None }
+            );
+            assert_eq!(
+                receiver.recv().await.unwrap(),
+                Entry { status: RETURNING, output: Some(Immediate("done".to_string())) }
+            );
+        },
+    }
+}
+
 
 
