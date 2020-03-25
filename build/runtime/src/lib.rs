@@ -274,12 +274,12 @@ impl BiBiFi {
             match locals.get_mut(&i.name) {
                 None => Entry::from(
                     database.append(&program.principal.ident.name, &i.name, &evaluated),
-                    Status::SET,
+                    Status::APPEND,
                 ),
                 Some(ref mut value) => {
                     **value = evaluated;
                     Entry {
-                        status: Status::SET,
+                        status: Status::APPEND,
                         output: None,
                     }
                 }
