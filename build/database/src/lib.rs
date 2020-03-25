@@ -38,6 +38,7 @@ impl ToString for Principal {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize)]
+#[serde(untagged)]
 pub enum Value {
     Immediate(String),
     List(Vec<Value>),
@@ -190,7 +191,9 @@ impl Database {
                         VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => {
                             let mut p = p.clone();
                             let delegations = if let Target::Variable(variable) = target {
-                                if self.check_right(variable, &Right::Delegate, delegator) {
+                                if user == delegated
+                                    || self.check_right(variable, &Right::Delegate, user)
+                                {
                                     let delegation = Delegation {
                                         target: variable.clone(),
                                         delegator: delegator.clone(),
@@ -205,7 +208,9 @@ impl Database {
                                     .keys()
                                     .clone()
                                     .filter_map(|variable| {
-                                        if self.check_right(variable, &Right::Delegate, delegator) {
+                                        if user == delegated
+                                            || self.check_right(variable, &Right::Delegate, user)
+                                        {
                                             Some(Delegation {
                                                 target: variable.clone(),
                                                 delegator: delegator.clone(),
