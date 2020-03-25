@@ -53,101 +53,137 @@ impl BiBiFi {
     ) -> Option<Database> {
         let program = parse(program);
         if let Ok(program) = program {
-            if database.check_principal(&program.principal.ident.name)
-                && database.check_pass(&program.principal.ident.name, &program.password)
+            if &program.principal.ident.name != "anyone"
+                && database.check_principal(&program.principal.ident.name)
             {
-                let mut cmd = &program.command;
-                let mut locals: HashMap<String, Value> = HashMap::new();
+                if database.check_pass(&program.principal.ident.name, &program.password) {
+                    let mut cmd = &program.command;
+                    let mut locals: HashMap<String, Value> = HashMap::new();
 
-                while let Command::Chain(prim, next) = cmd {
-                    cmd = &*next;
-                    match match prim {
-                        PrimitiveCommand::CreatePrincipal(cp) => BiBiFi::create_principal(
-                            &mut database,
-                            &mut locals,
-                            &sender,
-                            &program,
-                            cp,
-                        ),
-                        PrimitiveCommand::ChangePassword(cp) => BiBiFi::change_password(
-                            &mut database,
-                            &mut locals,
-                            &sender,
-                            &program,
-                            cp,
-                        ),
-                        PrimitiveCommand::Assignment(a) => {
-                            BiBiFi::assignment(&mut database, &mut locals, &sender, &program, a)
+                    while let Command::Chain(prim, next) = cmd {
+                        cmd = &*next;
+                        match match prim {
+                            PrimitiveCommand::CreatePrincipal(cp) => BiBiFi::create_principal(
+                                &mut database,
+                                &mut locals,
+                                &sender,
+                                &program,
+                                cp,
+                            ),
+                            PrimitiveCommand::ChangePassword(cp) => BiBiFi::change_password(
+                                &mut database,
+                                &mut locals,
+                                &sender,
+                                &program,
+                                cp,
+                            ),
+                            PrimitiveCommand::Assignment(a) => {
+                                BiBiFi::assignment(&mut database, &mut locals, &sender, &program, a)
+                            }
+                            PrimitiveCommand::Append(a) => {
+                                BiBiFi::append(&mut database, &mut locals, &sender, &program, a)
+                            }
+                            PrimitiveCommand::LocalAssignment(a) => BiBiFi::local_assignment(
+                                &mut database,
+                                &mut locals,
+                                &sender,
+                                &program,
+                                a,
+                            ),
+                            PrimitiveCommand::ForEach(fe) => {
+                                BiBiFi::for_each(&mut database, &mut locals, &sender, &program, fe)
+                            }
+                            PrimitiveCommand::SetDelegation(d) => BiBiFi::set_delegation(
+                                &mut database,
+                                &mut locals,
+                                &sender,
+                                &program,
+                                d,
+                            ),
+                            PrimitiveCommand::DeleteDelegation(d) => BiBiFi::delete_delegation(
+                                &mut database,
+                                &mut locals,
+                                &sender,
+                                &program,
+                                d,
+                            ),
+                            PrimitiveCommand::DefaultDelegator(p) => BiBiFi::default_delegator(
+                                &mut database,
+                                &mut locals,
+                                &sender,
+                                &program,
+                                p,
+                            ),
+                        } {
+                            false => return None,
+                            _ => {}
                         }
-                        PrimitiveCommand::Append(a) => {
-                            BiBiFi::append(&mut database, &mut locals, &sender, &program, a)
-                        }
-                        PrimitiveCommand::LocalAssignment(a) => BiBiFi::local_assignment(
-                            &mut database,
-                            &mut locals,
-                            &sender,
-                            &program,
-                            a,
-                        ),
-                        PrimitiveCommand::ForEach(fe) => {
-                            BiBiFi::for_each(&mut database, &mut locals, &sender, &program, fe)
-                        }
-                        PrimitiveCommand::SetDelegation(d) => {
-                            BiBiFi::set_delegation(&mut database, &mut locals, &sender, &program, d)
-                        }
-                        PrimitiveCommand::DeleteDelegation(d) => BiBiFi::delete_delegation(
-                            &mut database,
-                            &mut locals,
-                            &sender,
-                            &program,
-                            d,
-                        ),
-                        PrimitiveCommand::DefaultDelegator(p) => BiBiFi::default_delegator(
-                            &mut database,
-                            &mut locals,
-                            &sender,
-                            &program,
-                            p,
-                        ),
-                    } {
-                        false => return None,
-                        _ => {}
                     }
+                    match cmd {
+                        Command::Exit => {
+                            if &program.principal.ident.name != "admin" {
+                                sender
+                                    .send(Entry {
+                                        status: Status::DENIED,
+                                        output: None,
+                                    })
+                                    .unwrap();
+                                None
+                            } else {
+                                sender
+                                    .send(Entry {
+                                        status: Status::EXITING,
+                                        output: None,
+                                    })
+                                    .unwrap();
+                                Some(database)
+                            }
+                        }
+                        Command::Return(e) => {
+                            let value = BiBiFi::evaluate(&database, &locals, &program, e);
+                            match value {
+                                Ok(value) => {
+                                    sender.send(Entry {
+                                        status: Status::RETURNING,
+                                        output: Some(value),
+                                    });
+                                    Some(database)
+                                }
+                                Err(e) => {
+                                    sender.send(e);
+                                    None
+                                }
+                            }
+                        }
+                        _ => None, // unreachable
+                    }
+                } else {
+                    sender
+                        .send(Entry {
+                            status: Status::DENIED,
+                            output: None,
+                        })
+                        .unwrap();
+                    None
                 }
-                match cmd {
-                    Command::Exit => {
-                        if &program.principal.ident.name != "admin" {
-                            sender
-                                .send(Entry {
-                                    status: Status::DENIED,
-                                    output: None,
-                                })
-                                .unwrap();
-                        } else {
-                            sender
-                                .send(Entry {
-                                    status: Status::EXITING,
-                                    output: None,
-                                })
-                                .unwrap();
-                        }
-                        return Some(database);
-                    }
-                    Command::Return(_) => {
-                        // TODO
-                        return Some(database);
-                    }
-                    _ => {} // unreachable
-                }
+            } else {
+                sender
+                    .send(Entry {
+                        status: Status::FAILED,
+                        output: None,
+                    })
+                    .unwrap();
+                None
             }
+        } else {
+            sender
+                .send(Entry {
+                    status: Status::FAILED,
+                    output: None,
+                })
+                .unwrap();
+            None
         }
-        sender
-            .send(Entry {
-                status: Status::FAILED,
-                output: None,
-            })
-            .unwrap();
-        None
     }
 
     fn change_password(
@@ -230,8 +266,46 @@ impl BiBiFi {
         cp: &Assignment,
     ) -> bool {
         if let Variable::Variable(i) = &cp.variable {
-            // TODO
-            true
+            let evaluated = BiBiFi::evaluate(database, locals, program, &cp.expr);
+            if database.get(&i.name).is_some() {
+                if database.check_right(
+                    &Target::Variable(i.name.clone()),
+                    &Right::Write,
+                    &program.principal.ident.name,
+                ) {
+                    match evaluated {
+                        Ok(value) => {
+                            database.set(&i.name, &value);
+                            true
+                        }
+                        Err(e) => {
+                            sender.send(e).unwrap();
+                            false
+                        }
+                    }
+                } else {
+                    sender
+                        .send(Entry {
+                            status: Status::DENIED,
+                            output: None,
+                        })
+                        .unwrap();
+                    false
+                }
+            } else if let Some(ref mut value) = locals.get(&i.name) {
+                match evaluated {
+                    Ok(evaluated) => {
+                        *value = &evaluated;
+                        true
+                    }
+                    Err(e) => {
+                        sender.send(e).unwrap();
+                        false
+                    }
+                }
+            } else {
+                true
+            }
         } else {
             sender
                 .send(Entry {
@@ -251,8 +325,71 @@ impl BiBiFi {
         cp: &Append,
     ) -> bool {
         if let Variable::Variable(i) = &cp.variable {
-            // TODO
-            true
+            let evaluated = BiBiFi::evaluate(database, locals, program, &cp.expr);
+            if let Some(list) = database.get(&i.name) {
+                if database.check_right(
+                    &Target::Variable(i.name.clone()),
+                    &Right::Write,
+                    &program.principal.ident.name,
+                ) || database.check_right(
+                    &Target::Variable(i.name.clone()),
+                    &Right::Append,
+                    &program.principal.ident.name,
+                ) {
+                    if let Value::List(list) = list {
+                        match evaluated {
+                            Ok(value) => match value {
+                                Value::Immediate(_) | Value::FieldVals(_) => {
+                                    database.set(&i.name, &value);
+                                    true
+                                }
+                                Value::List(evaluated) => {
+                                    sender
+                                        .send(Entry {
+                                            status: Status::FAILED,
+                                            output: None,
+                                        })
+                                        .unwrap();
+                                    false
+                                }
+                            },
+                            Err(e) => {
+                                sender.send(e).unwrap();
+                                false
+                            }
+                        }
+                    } else {
+                        sender
+                            .send(Entry {
+                                status: Status::FAILED,
+                                output: None,
+                            })
+                            .unwrap();
+                        false
+                    }
+                } else {
+                    sender
+                        .send(Entry {
+                            status: Status::DENIED,
+                            output: None,
+                        })
+                        .unwrap();
+                    false
+                }
+            } else if let Some(ref mut value) = locals.get(&i.name) {
+                match evaluated {
+                    Ok(evaluated) => {
+                        *value = &evaluated;
+                        true
+                    }
+                    Err(e) => {
+                        sender.send(e).unwrap();
+                        false
+                    }
+                }
+            } else {
+                true
+            }
         } else {
             sender
                 .send(Entry {
@@ -315,8 +452,8 @@ impl BiBiFi {
     }
 
     fn evaluate(
-        database: &mut Database,
-        locals: &mut HashMap<String, Value>,
+        database: &Database,
+        locals: &HashMap<String, Value>,
         program: &Program,
         expr: &Expr,
     ) -> Result<Value, Entry> {
@@ -328,14 +465,13 @@ impl BiBiFi {
     }
 
     fn get_variable(
-        database: &mut Database,
-        locals: &mut HashMap<String, Value>,
+        database: &Database,
+        locals: &HashMap<String, Value>,
         program: &Program,
         variable: &String,
         rights: &[Right],
     ) -> Result<Value, Entry> {
-        if let Some(value) = database.get_mut(variable) {
-            let value = value.clone();
+        if let Some(value) = database.get(variable) {
             if rights.iter().any(|right| {
                 database.check_right(
                     &Target::Variable(variable.clone()),
@@ -343,7 +479,7 @@ impl BiBiFi {
                     &program.principal.ident.name,
                 )
             }) {
-                Ok(value)
+                Ok(value.clone())
             } else {
                 Err(Entry {
                     status: Status::DENIED,
@@ -409,8 +545,8 @@ impl BiBiFi {
     }
 
     fn evaluate_value(
-        database: &mut Database,
-        locals: &mut HashMap<String, Value>,
+        database: &Database,
+        locals: &HashMap<String, Value>,
         program: &Program,
         value: &ParserValue,
     ) -> Result<Value, Entry> {
@@ -425,8 +561,8 @@ impl BiBiFi {
     }
 
     fn evaluate_fieldvals(
-        database: &mut Database,
-        locals: &mut HashMap<String, Value>,
+        database: &Database,
+        locals: &HashMap<String, Value>,
         program: &Program,
         value: &Vec<Assignment>,
     ) -> Result<Value, Entry> {
