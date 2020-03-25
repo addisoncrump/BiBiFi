@@ -1,8 +1,8 @@
 use crate::status::{Entry, Status};
-use bibifi_database::{Database, Status as DBStatus, Value};
+use bibifi_database::{Database, Right, Status as DBStatus, Target, Value};
 use bibifi_parser::parse;
-use bibifi_parser::types::Value as ParserValue;
 use bibifi_parser::types::*;
+use bibifi_parser::types::{Right as ParserRight, Target as ParserTarget, Value as ParserValue};
 use std::collections::HashMap;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -443,10 +443,24 @@ impl BiBiFi {
         program: &Program,
         d: &Delegation,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
-        }
+        Entry::from(
+            database.delegate(
+                &program.principal.ident.name,
+                &match &d.target {
+                    ParserTarget::All => Target::All,
+                    ParserTarget::Variable(i) => Target::Variable(i.name.clone()),
+                },
+                &d.delegator.ident.name,
+                &match &d.right {
+                    ParserRight::Read => Right::Read,
+                    ParserRight::Write => Right::Write,
+                    ParserRight::Append => Right::Append,
+                    ParserRight::Delegate => Right::Delegate,
+                },
+                &d.delegated.ident.name,
+            ),
+            Status::SET_DELEGATION,
+        )
     }
 
     fn delete_delegation(
@@ -455,10 +469,24 @@ impl BiBiFi {
         program: &Program,
         d: &Delegation,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
-        }
+        Entry::from(
+            database.undelegate(
+                &program.principal.ident.name,
+                &match &d.target {
+                    ParserTarget::All => Target::All,
+                    ParserTarget::Variable(i) => Target::Variable(i.name.clone()),
+                },
+                &d.delegator.ident.name,
+                &match &d.right {
+                    ParserRight::Read => Right::Read,
+                    ParserRight::Write => Right::Write,
+                    ParserRight::Append => Right::Append,
+                    ParserRight::Delegate => Right::Delegate,
+                },
+                &d.delegated.ident.name,
+            ),
+            Status::DELETE_DELEGATION,
+        )
     }
 
     fn default_delegator(
@@ -467,10 +495,10 @@ impl BiBiFi {
         program: &Program,
         p: &Principal,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
-        }
+        Entry::from(
+            database.set_default_delegator(&program.principal.ident.name, &p.ident.name),
+            Status::DEFAULT_DELEGATOR,
+        )
     }
 
     fn evaluate(
