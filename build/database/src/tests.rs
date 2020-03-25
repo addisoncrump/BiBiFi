@@ -33,16 +33,16 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
     );
 
     //add principals to database
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("".to_string()),
-    ); // empty string password
-    my_database.create_principal(
+    ), SUCCESS); // empty string password
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"tom".to_string(),
         &hash("tom_pass".to_string()),
-    );
+    ), SUCCESS);
 
     //principal with correct password checks true
     assert_eq!(
@@ -69,41 +69,41 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
     );
 
     // lets say, bob created my_var and delegated all permissions to everyone
-    my_database.set(
+    assert_eq!(my_database.set(
         &"bob".to_string(),
         &"my_var1".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
     // rights delegated automatically, hopefully
 
-    my_database.delegate(
+    assert_eq!(my_database.delegate(
         &"admin".to_string(),
         &Target::Variable("my_var1".to_string()),
         &"bob".to_string(),
         &Right::Read,
         &"anyone".to_string(),
-    );
-    my_database.delegate(
+    ), SUCCESS);
+    assert_eq!(my_database.delegate(
         &"admin".to_string(),
         &Target::Variable("my_var1".to_string()),
         &"bob".to_string(),
         &Right::Write,
         &"anyone".to_string(),
-    );
-    my_database.delegate(
+    ), SUCCESS);
+    assert_eq!(my_database.delegate(
         &"admin".to_string(),
         &Target::Variable("my_var1".to_string()),
         &"bob".to_string(),
         &Right::Append,
         &"anyone".to_string(),
-    );
-    my_database.delegate(
+    ), SUCCESS);
+    assert_eq!(my_database.delegate(
         &"admin".to_string(),
         &Target::Variable("my_var1".to_string()),
         &"bob".to_string(),
         &Right::Delegate,
         &"anyone".to_string(),
-    );
+    ), SUCCESS);
 
     // check for correct permissions
     assert_eq!(
@@ -168,11 +168,11 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
     );
 
     //add principals to database after anyone has some permissions
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"alice".to_string(),
         &hash("alice_pass".to_string()),
-    );
+    ), SUCCESS);
 
     // check for correct permissions
     assert_eq!(
@@ -197,21 +197,21 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
     );
 
     //alice created my_var2
-    my_database.set(
+    assert_eq!(my_database.set(
         &"bob".to_string(),
         &"my_var2".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     //change the default
-    my_database.set_default_delegator(&"admin".to_string(), &"alice".to_string());
+    assert_eq!(my_database.set_default_delegator(&"admin".to_string(), &"alice".to_string()), SUCCESS);
 
     //change bob's password
-    my_database.change_password(
+    assert_eq!(my_database.change_password(
         &"bob".to_string(),
         &"bob".to_string(),
         &hash("bob_new_pass".to_string()),
-    );
+    ), SUCCESS);
     assert_eq!(
         my_database.check_pass(&"bob".to_string(), &hash("bob_new_pass".to_string())),
         SUCCESS
@@ -230,54 +230,54 @@ fn basic_full_2() -> Result<(), Box<dyn Error>> {
     let mut my_database = Database::new(hash("wolla".to_string()));
 
     //add principals to database
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("".to_string()),
-    ); // empty string password
-    my_database.create_principal(
+    ), SUCCESS); // empty string password
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"tom".to_string(),
         &hash("tom_pass".to_string()),
-    );
+    ), SUCCESS);
 
     // lets say, bob created my_var and delegated all permissions to everyone
-    my_database.set(
+    assert_eq!(my_database.set(
         &"bob".to_string(),
         &"my_var1".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     //add principals to database after anyone has some permissions
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"alice".to_string(),
         &hash("alice_pass".to_string()),
-    );
+    ), SUCCESS);
 
     //alice created my_var2
-    my_database.set(
+    assert_eq!(my_database.set(
         &"alice".to_string(),
         &"my_var2".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     //change the default
-    my_database.set_default_delegator(&"admin".to_string(), &"alice".to_string());
+    assert_eq!(my_database.set_default_delegator(&"admin".to_string(), &"alice".to_string()), SUCCESS);
 
     //change bob's password
-    my_database.change_password(
+    assert_eq!(my_database.change_password(
         &"bob".to_string(),
         &"bob".to_string(),
         &hash("bob_new_pass".to_string()),
-    );
+    ), SUCCESS);
 
     //add principals to database after new default alice has some permissions other than prev default anyone
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"john".to_string(),
         &hash("john_pass".to_string()),
-    );
+    ), SUCCESS);
 
     // check for correct permissions
     assert_eq!(
@@ -302,18 +302,18 @@ fn basic_full_2() -> Result<(), Box<dyn Error>> {
     );
 
     //alice created my_var3
-    my_database.set(
+    assert_eq!(my_database.set(
         &"alice".to_string(),
         &"my_var3".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     //add principals to database after new default alice has some permissions other than prev default anyone
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"git".to_string(),
         &hash("git_pass".to_string()),
-    );
+    ), SUCCESS);
     // check for in-correct permissions
     assert_eq!(
         my_database.check_right(&"my_var3".to_string(), &Right::Read, &"git".to_string()),
@@ -332,18 +332,18 @@ fn basic_full_2() -> Result<(), Box<dyn Error>> {
         true
     );
 
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"git1".to_string(),
         &hash("git_pass".to_string()),
-    );
+    ), SUCCESS);
 
     //alice created my_var4
-    my_database.set(
+    assert_eq!(my_database.set(
         &"alice".to_string(),
         &"my_var4".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     // check for in-correct permissions
     assert_eq!(
@@ -376,47 +376,47 @@ fn basic_full_3() -> Result<(), Box<dyn Error>> {
     let mut my_database = Database::new(hash("wolla".to_string()));
 
     //add principals to database
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("".to_string()),
-    ); // empty string password
-    my_database.create_principal(
+    ), SUCCESS); // empty string password
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"tom".to_string(),
         &hash("tom_pass".to_string()),
-    );
+    ), SUCCESS);
 
     // lets say, bob created my_var and delegated all permissions to everyone
-    my_database.set(
+    assert_eq!(my_database.set(
         &"bob".to_string(),
         &"my_var1".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     //add principals to database after anyone has some permissions
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"alice".to_string(),
         &hash("alice_pass".to_string()),
-    );
+    ), SUCCESS);
 
     //alice created my_var2
-    my_database.set(
+    assert_eq!(my_database.set(
         &"alice".to_string(),
         &"my_var2".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     //change the default
-    my_database.set_default_delegator(&"admin".to_string(), &"alice".to_string());
+    assert_eq!(my_database.set_default_delegator(&"admin".to_string(), &"alice".to_string()), SUCCESS);
 
     //add principals to database after new default alice has some permissions other than prev default anyone
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"john".to_string(),
         &hash("john_pass".to_string()),
-    );
+    ), SUCCESS);
 
     // check for correct permissions
     assert_eq!(
@@ -441,18 +441,18 @@ fn basic_full_3() -> Result<(), Box<dyn Error>> {
     );
 
     //alice created my_var3
-    my_database.set(
+    assert_eq!(my_database.set(
         &"alice".to_string(),
         &"my_var3".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     //add principals to database after new default alice has some permissions other than prev default anyone
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"git".to_string(),
         &hash("git_pass".to_string()),
-    );
+    ), SUCCESS);
     // check for in-correct permissions
     assert_eq!(
         my_database.check_right(&"my_var3".to_string(), &Right::Read, &"git".to_string()),
@@ -471,18 +471,18 @@ fn basic_full_3() -> Result<(), Box<dyn Error>> {
         true
     );
 
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"git1".to_string(),
         &hash("git_pass".to_string()),
-    );
+    ), SUCCESS);
 
     //alice created my_var4
-    my_database.set(
+    assert_eq!(my_database.set(
         &"alice".to_string(),
         &"my_var4".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     // check for in-correct permissions
     assert_eq!(
@@ -507,22 +507,22 @@ fn basic_full_3() -> Result<(), Box<dyn Error>> {
     );
 
     // give the permissions again to create duplicate permissions
-    my_database.delegate(
+    assert_eq!(my_database.delegate(
         &"admin".to_string(),
         &Target::Variable("my_var3".to_string()),
         &"alice".to_string(),
         &Right::Read,
         &"git".to_string(),
-    );
+    ), SUCCESS);
 
     // delete permissions to git
-    my_database.undelegate(
+    assert_eq!(my_database.undelegate(
         &"admin".to_string(),
         &Target::Variable("my_var3".to_string()),
         &"alice".to_string(),
         &Right::Read,
         &"git".to_string(),
-    );
+    ), SUCCESS);
 
     assert_eq!(
         my_database.check_right(&"my_var3".to_string(), &Right::Read, &"git".to_string()),
@@ -538,46 +538,46 @@ fn basic_full_4() -> Result<(), Box<dyn Error>> {
     let mut my_database = Database::new(hash("wolla".to_string()));
 
     //add principals to database
-    my_database.create_principal(
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"bob".to_string(),
         &hash("".to_string()),
-    ); // empty string password
-    my_database.create_principal(
+    ), SUCCESS); // empty string password
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"alice".to_string(),
         &hash("".to_string()),
-    ); // empty string password
-    my_database.create_principal(
+    ), SUCCESS); // empty string password
+    assert_eq!(my_database.create_principal(
         &"admin".to_string(),
         &"tom".to_string(),
         &hash("tom_pass".to_string()),
-    );
+    ), SUCCESS);
 
     // lets say, bob created my_var and delegated all permissions to everyone
-    my_database.set(
+    assert_eq!(my_database.set(
         &"bob".to_string(),
         &"my_var1".to_string(),
         &Value::Immediate("lmao".to_string()),
-    );
+    ), SUCCESS);
 
     // give the permission of my_var1 to alice
-    my_database.delegate(
+    assert_eq!(my_database.delegate(
         &"admin".to_string(),
         &Target::Variable("my_var1".to_string()),
         &"bob".to_string(),
         &Right::Read,
         &"alice".to_string(),
-    );
+    ), SUCCESS);
 
     // give the permission of my_var1 to tom
-    my_database.delegate(
+    assert_eq!(my_database.delegate(
         &"admin".to_string(),
         &Target::Variable("my_var1".to_string()),
         &"alice".to_string(),
         &Right::Read,
         &"tom".to_string(),
-    );
+    ), SUCCESS);
 
     assert_eq!(
         my_database.check_right(&"my_var1".to_string(), &Right::Read, &"tom".to_string()),
@@ -585,13 +585,13 @@ fn basic_full_4() -> Result<(), Box<dyn Error>> {
     );
 
     // now, tom can delete the rights himself
-    my_database.undelegate(
+    assert_eq!(my_database.undelegate(
         &"tom".to_string(),
         &Target::Variable("my_var1".to_string()),
         &"alice".to_string(),
         &Right::Read,
         &"tom".to_string(),
-    );
+    ), SUCCESS);
 
     assert_eq!(
         my_database.check_right(&"my_var1".to_string(), &Right::Read, &"tom".to_string()),
