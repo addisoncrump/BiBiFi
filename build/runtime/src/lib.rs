@@ -11,11 +11,14 @@ pub mod status;
 
 #[derive(Clone)]
 pub struct BiBiFi {
-    sender: UnboundedSender<(String, UnboundedSender<Entry>)>,
+    sender: UnboundedSender<(String, UnboundedSender<Vec<Entry>>)>,
 }
 
 impl BiBiFi {
-    pub fn new() -> (BiBiFi, UnboundedReceiver<(String, UnboundedSender<Entry>)>) {
+    pub fn new() -> (
+        BiBiFi,
+        UnboundedReceiver<(String, UnboundedSender<Vec<Entry>>)>,
+    ) {
         let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
         (BiBiFi { sender }, receiver)
     }
@@ -23,8 +26,8 @@ impl BiBiFi {
     pub async fn submit(
         &self,
         program: String,
-        logback: UnboundedSender<Entry>,
-    ) -> Result<(), SendError<(String, UnboundedSender<Entry>)>> {
+        logback: UnboundedSender<Vec<Entry>>,
+    ) -> Result<(), SendError<(String, UnboundedSender<Vec<Entry>>)>> {
         self.sender.send((program, logback))
     }
 
@@ -367,8 +370,8 @@ impl BiBiFi {
                                         let mut modified = list.iter().map(modification);
                                         if let Some(bad) = modified.find(|item| item.is_err()) {
                                             match bad {
-                                                Ok(_) => panic!(),
                                                 Err(e) => e,
+                                                _ => panic!(),
                                             }
                                         } else {
                                             locals.insert(
@@ -398,23 +401,22 @@ impl BiBiFi {
                                             let mut modified = list.iter().map(modification);
                                             if let Some(bad) = modified.find(|item| item.is_err()) {
                                                 match bad {
-                                                    Ok(_) => panic!(),
                                                     Err(e) => e,
+                                                    _ => panic!(),
                                                 }
                                             } else {
-                                                database.set(
-                                                    &program.principal.ident.name,
-                                                    &listi.name,
-                                                    &Value::List(
-                                                        modified
-                                                            .map(|item| item.unwrap())
-                                                            .collect(),
+                                                Entry::from(
+                                                    database.set(
+                                                        &program.principal.ident.name,
+                                                        &listi.name,
+                                                        &Value::List(
+                                                            modified
+                                                                .map(|item| item.unwrap())
+                                                                .collect(),
+                                                        ),
                                                     ),
-                                                );
-                                                Entry {
-                                                    status: Status::FOREACH,
-                                                    output: None,
-                                                }
+                                                    Status::FOREACH,
+                                                )
                                             }
                                         }
                                         _ => Entry {
