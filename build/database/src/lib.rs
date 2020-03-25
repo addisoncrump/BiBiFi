@@ -331,12 +331,47 @@ impl Database {
     }
 
     pub fn set(&mut self, user: &String, variable: &String, value: &Value) -> Status {
-        if !self.variables.contains_key(variable) || self.check_right(variable, &Right::Write, user)
-        {
+        if !self.variables.contains_key(variable) {
+            self.variables.insert(variable.clone(), value.clone());
+            for right in &[Right::Read, Right::Write, Right::Append, Right::Delegate] {
+                self.delegate(user, &Target::All, &"admin".to_string(), right, user);
+            }
+            SUCCESS
+        } else if self.check_right(variable, &Right::Write, user) {
             self.variables.insert(variable.clone(), value.clone());
             SUCCESS
         } else {
             DENIED
+        }
+    }
+
+    pub fn set_member(
+        &mut self,
+        user: &String,
+        variable: &String,
+        member: &String,
+        value: &String,
+    ) -> Status {
+        if let Some(existing) = self.variables.get(variable).cloned() {
+            match existing {
+                Value::FieldVals(mut fv) => {
+                    if let Some(existing) = fv.get_mut(member) {
+                        if self.check_right(variable, &Right::Write, user) {
+                            *existing = value.clone();
+                            self.variables
+                                .insert(variable.clone(), Value::FieldVals(fv));
+                            SUCCESS
+                        } else {
+                            DENIED
+                        }
+                    } else {
+                        FAILED
+                    }
+                }
+                _ => FAILED,
+            }
+        } else {
+            FAILED
         }
     }
 
@@ -373,6 +408,10 @@ impl Database {
         } else {
             Err(DENIED)
         }
+    }
+
+    pub fn contains(&self, variable: &String) -> bool {
+        self.variables.contains_key(variable)
     }
 }
 

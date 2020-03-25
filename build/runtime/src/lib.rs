@@ -181,28 +181,66 @@ impl BiBiFi {
         program: &Program,
         cp: &Assignment,
     ) -> Entry {
-        if let Variable::Variable(i) = &cp.variable {
-            let evaluated = match BiBiFi::evaluate(database, locals, program, &cp.expr) {
-                Ok(evaluated) => evaluated,
-                Err(e) => return e,
-            };
-            if locals.contains_key(&i.name) {
-                locals.insert(i.name.clone(), evaluated);
-                Entry {
-                    status: Status::SET,
-                    output: None,
+        let evaluated = match BiBiFi::evaluate(database, locals, program, &cp.expr) {
+            Ok(evaluated) => evaluated,
+            Err(e) => return e,
+        };
+        match &cp.variable {
+            Variable::Variable(i) => {
+                if locals.contains_key(&i.name) {
+                    locals.insert(i.name.clone(), evaluated);
+                    Entry {
+                        status: Status::SET,
+                        output: None,
+                    }
+                } else {
+                    Entry::from(
+                        database.set(&program.principal.ident.name, &i.name, &evaluated),
+                        Status::SET,
+                    )
                 }
-            } else {
-                Entry::from(
-                    database.set(&program.principal.ident.name, &i.name, &evaluated),
-                    Status::SET,
-                )
             }
-        } else {
-            Entry {
-                status: Status::FAILED,
-                output: None,
-            }
+            Variable::Member(i1, i2) => match evaluated {
+                Value::Immediate(s) => {
+                    if let Variable::Variable(i) = i2.as_ref() {
+                        if let Some(ref mut value) = locals.get_mut(&i1.name) {
+                            if let Value::FieldVals(map) = value {
+                                if let Some(existing) = map.get_mut(&i.name) {
+                                    *existing = s;
+                                    Entry {
+                                        status: Status::SET,
+                                        output: None,
+                                    }
+                                } else {
+                                    Entry {
+                                        status: Status::FAILED,
+                                        output: None,
+                                    }
+                                }
+                            }
+                        } else {
+                            Entry::from(
+                                database.set_member(
+                                    &program.principal.ident.name,
+                                    &i1.name,
+                                    &i2.name,
+                                    &s,
+                                ),
+                                Status::SET,
+                            )
+                        }
+                    } else {
+                        Entry {
+                            status: Status::FAILED,
+                            output: None,
+                        }
+                    }
+                }
+                _ => Entry {
+                    status: Status::FAILED,
+                    output: None,
+                },
+            },
         }
     }
 
@@ -252,9 +290,33 @@ impl BiBiFi {
         program: &Program,
         cp: &Assignment,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
+        match &cp.variable {
+            Variable::Variable(i) => {
+                if database.contains(&i.name) || locals.contains_key(&i.name) {
+                    Entry {
+                        status: Status::FAILED,
+                        output: None,
+                    }
+                } else {
+                    let evaluated = match BiBiFi::evaluate(database, locals, program, &cp.expr) {
+                        Ok(evaluated) => match evaluated {
+                            Value::Immediate(_) | Value::FieldVals(_) => evaluated,
+                            Value::List(_) => {
+                                return Entry {
+                                    status: Status::FAILED,
+                                    output: None,
+                                }
+                            }
+                        },
+                        Err(e) => return e,
+                    };
+                    locals.insert(i.name.clone(), evaluated);
+                }
+            }
+            Variable::Member(_, _) => Entry {
+                status: Status::FAILED,
+                output: None,
+            },
         }
     }
 
