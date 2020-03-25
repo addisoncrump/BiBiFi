@@ -1,3 +1,4 @@
+use crate::status::Status::FAILED;
 use crate::status::{Entry, Status};
 use bibifi_database::{Database, Right, Status as DBStatus, Target, Value};
 use bibifi_parser::parse;
@@ -57,11 +58,10 @@ impl BiBiFi {
         if let Ok(program) = program {
             match database.check_pass(&program.principal.ident.name, &program.password) {
                 DBStatus::SUCCESS => {
-                    let mut cmd = &program.command;
+                    let cmd = &mut program.commands.iter();
                     let mut locals: HashMap<String, Value> = HashMap::new();
 
-                    while let Command::Chain(prim, next) = cmd {
-                        cmd = &*next;
+                    while let Some(prim) = cmd.next() {
                         let res = match prim {
                             PrimitiveCommand::CreatePrincipal(cp) => {
                                 BiBiFi::create_principal(&mut database, &program, cp)
@@ -96,8 +96,8 @@ impl BiBiFi {
                         }
                         messages.push(res);
                     }
-                    match cmd {
-                        Command::Exit => {
+                    match &program.terminator {
+                        TerminatorCommand::Exit => {
                             if &program.principal.ident.name != "admin" {
                                 (
                                     vec![Entry {
@@ -114,7 +114,7 @@ impl BiBiFi {
                                 (messages, Some(database))
                             }
                         }
-                        Command::Return(e) => {
+                        TerminatorCommand::Return(e) => {
                             let value = BiBiFi::evaluate(&database, &locals, &program, e);
                             match value {
                                 Ok(value) => {
@@ -127,7 +127,6 @@ impl BiBiFi {
                                 Err(e) => (vec![e], None),
                             }
                         }
-                        _ => panic!(),
                     }
                 }
                 DBStatus::DENIED => (
@@ -260,15 +259,7 @@ impl BiBiFi {
     ) -> Entry {
         if let Variable::Variable(i) = &ap.variable {
             let evaluated = match BiBiFi::evaluate(database, locals, program, &ap.expr) {
-                Ok(evaluated) => match evaluated {
-                    Value::Immediate(_) | Value::FieldVals(_) => evaluated,
-                    Value::List(_) => {
-                        return Entry {
-                            status: Status::FAILED,
-                            output: None,
-                        }
-                    }
-                },
+                Ok(evaluated) => evaluated,
                 Err(e) => return e,
             };
             match locals.get_mut(&i.name) {
@@ -307,15 +298,7 @@ impl BiBiFi {
                     }
                 } else {
                     let evaluated = match BiBiFi::evaluate(database, locals, program, &la.expr) {
-                        Ok(evaluated) => match evaluated {
-                            Value::Immediate(_) | Value::FieldVals(_) => evaluated,
-                            Value::List(_) => {
-                                return Entry {
-                                    status: Status::FAILED,
-                                    output: None,
-                                }
-                            }
-                        },
+                        Ok(evaluated) => evaluated,
                         Err(e) => return e,
                     };
                     locals.insert(i.name.clone(), evaluated);
@@ -362,22 +345,30 @@ impl BiBiFi {
                                 };
                                 res
                             };
-                            locals.remove(&i.name).unwrap();
 
                             if let Some(list) = locals.get(&listi.name).cloned() {
                                 match list {
                                     Value::List(list) => {
-                                        let mut modified = list.iter().cloned().map(modification);
-                                        if let Some(bad) = modified.find(|item| item.is_err()) {
+                                        let modified = list
+                                            .iter()
+                                            .cloned()
+                                            .map(modification)
+                                            .collect::<Vec<Result<Value, Entry>>>();
+                                        if let Some(bad) =
+                                            modified.iter().find(|item| item.is_err())
+                                        {
                                             match bad {
-                                                Err(e) => e,
+                                                Err(e) => e.clone(),
                                                 _ => panic!(),
                                             }
                                         } else {
                                             locals.insert(
                                                 listi.name.clone(),
                                                 Value::List(
-                                                    modified.map(|item| item.unwrap()).collect(),
+                                                    modified
+                                                        .iter()
+                                                        .map(|item| item.clone().unwrap())
+                                                        .collect(),
                                                 ),
                                             );
                                             Entry {
@@ -398,11 +389,16 @@ impl BiBiFi {
                                 {
                                     Ok(list) => match list {
                                         Value::List(list) => {
-                                            let mut modified =
-                                                list.iter().cloned().map(modification);
-                                            if let Some(bad) = modified.find(|item| item.is_err()) {
+                                            let modified = list
+                                                .iter()
+                                                .cloned()
+                                                .map(modification)
+                                                .collect::<Vec<Result<Value, Entry>>>();
+                                            if let Some(bad) =
+                                                modified.iter().find(|item| item.is_err())
+                                            {
                                                 match bad {
-                                                    Err(e) => e,
+                                                    Err(e) => e.clone(),
                                                     _ => panic!(),
                                                 }
                                             } else {
@@ -412,7 +408,8 @@ impl BiBiFi {
                                                         &listi.name,
                                                         &Value::List(
                                                             modified
-                                                                .map(|item| item.unwrap())
+                                                                .iter()
+                                                                .map(|item| item.clone().unwrap())
                                                                 .collect(),
                                                         ),
                                                     ),
@@ -536,9 +533,31 @@ impl BiBiFi {
     ) -> Result<Value, Entry> {
         match value {
             ParserValue::Variable(v) => match v {
-                Variable::Variable(i) | Variable::Member(i, _) => {
-                    BiBiFi::get_variable(database, locals, program, &i.name)
-                }
+                Variable::Variable(i) => BiBiFi::get_variable(database, locals, program, &i.name),
+                Variable::Member(i1, v2) => match v2.as_ref() {
+                    Variable::Variable(i2) => {
+                        match BiBiFi::get_variable(database, locals, program, &i1.name) {
+                            Ok(variable) => match variable {
+                                Value::FieldVals(fv) => {
+                                    if let Some(s) = fv.get(&i2.name) {
+                                        Ok(Value::Immediate(s.clone()))
+                                    } else {
+                                        Err(Entry {
+                                            status: FAILED,
+                                            output: None,
+                                        })
+                                    }
+                                }
+                                _ => Err(Entry {
+                                    status: FAILED,
+                                    output: None,
+                                }),
+                            },
+                            Err(e) => Err(e),
+                        }
+                    }
+                    Variable::Member(_, _) => panic!(),
+                },
             },
             ParserValue::String(s) => Ok(Value::Immediate(s.clone())),
         }

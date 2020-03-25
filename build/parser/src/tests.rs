@@ -34,7 +34,7 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::CreatePrincipal(CreatePrincipal {
                     principal: Principal {
                         ident: Identifier {
@@ -43,202 +43,154 @@ fn basic_full_1() -> Result<(), Box<dyn Error>> {
                     },
                     password: hash("hammer".to_string())
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::ChangePassword(ChangePassword {
-                        principal: Principal {
-                            ident: Identifier {
-                                name: "bob".to_string()
-                            }
-                        },
-                        password: hash("bits".to_string())
+                PrimitiveCommand::ChangePassword(ChangePassword {
+                    principal: Principal {
+                        ident: Identifier {
+                            name: "bob".to_string()
+                        }
+                    },
+                    password: hash("bits".to_string())
+                }),
+                PrimitiveCommand::Assignment(Assignment {
+                    variable: Variable::Variable(Identifier {
+                        name: "x".to_string()
                     }),
-                    Box::new(Command::Chain(
-                        PrimitiveCommand::Assignment(Assignment {
+                    expr: Expr::Value(Value::String("done".to_string()))
+                }),
+                PrimitiveCommand::Assignment(Assignment {
+                    variable: Variable::Variable(Identifier {
+                        name: "a".to_string()
+                    }),
+                    expr: Expr::EmptyList
+                }),
+                PrimitiveCommand::Assignment(Assignment {
+                    variable: Variable::Variable(Identifier {
+                        name: "b".to_string()
+                    }),
+                    expr: Expr::FieldVals(vec![
+                        Assignment {
                             variable: Variable::Variable(Identifier {
+                                name: "p".to_string()
+                            }),
+                            expr: Expr::Value(Value::Variable(Variable::Variable(Identifier {
                                 name: "x".to_string()
+                            })))
+                        },
+                        Assignment {
+                            variable: Variable::Variable(Identifier {
+                                name: "q".to_string()
                             }),
-                            expr: Expr::Value(Value::String("done".to_string()))
-                        }),
-                        Box::new(Command::Chain(
-                            PrimitiveCommand::Assignment(Assignment {
-                                variable: Variable::Variable(Identifier {
-                                    name: "a".to_string()
-                                }),
-                                expr: Expr::EmptyList
+                            expr: Expr::Value(Value::String("that".to_string()))
+                        },
+                        Assignment {
+                            variable: Variable::Variable(Identifier {
+                                name: "r".to_string()
                             }),
-                            Box::new(Command::Chain(
-                                PrimitiveCommand::Assignment(Assignment {
-                                    variable: Variable::Variable(Identifier {
-                                        name: "b".to_string()
-                                    }),
-                                    expr: Expr::FieldVals(vec![
-                                        Assignment {
-                                            variable: Variable::Variable(Identifier {
-                                                name: "p".to_string()
-                                            }),
-                                            expr: Expr::Value(Value::Variable(Variable::Variable(
-                                                Identifier {
-                                                    name: "x".to_string()
-                                                }
-                                            )))
-                                        },
-                                        Assignment {
-                                            variable: Variable::Variable(Identifier {
-                                                name: "q".to_string()
-                                            }),
-                                            expr: Expr::Value(Value::String("that".to_string()))
-                                        },
-                                        Assignment {
-                                            variable: Variable::Variable(Identifier {
-                                                name: "r".to_string()
-                                            }),
-                                            expr: Expr::Value(Value::String("has".to_string()))
-                                        },
-                                    ])
-                                }),
-                                Box::new(Command::Chain(
-                                    PrimitiveCommand::Assignment(Assignment {
-                                        variable: Variable::Variable(Identifier {
-                                            name: "d".to_string()
-                                        }),
-                                        expr: Expr::Value(Value::Variable(Variable::Member(
-                                            Identifier {
-                                                name: "b".to_string()
-                                            },
-                                            Box::new(Variable::Variable(Identifier {
-                                                name: "q".to_string()
-                                            })),
-                                        )))
-                                    }),
-                                    Box::new(Command::Chain(
-                                        PrimitiveCommand::Assignment(Assignment {
-                                            variable: Variable::Variable(Identifier {
-                                                name: "e".to_string()
-                                            }),
-                                            expr: Expr::FieldVals(vec![
-                                                Assignment {
-                                                    variable: Variable::Variable(Identifier {
-                                                        name: "k".to_string()
-                                                    }),
-                                                    expr: Expr::Value(Value::Variable(
-                                                        Variable::Variable(Identifier {
-                                                            name: "d".to_string()
-                                                        })
-                                                    ))
-                                                },
-                                                Assignment {
-                                                    variable: Variable::Variable(Identifier {
-                                                        name: "l".to_string()
-                                                    }),
-                                                    expr: Expr::Value(Value::Variable(
-                                                        Variable::Member(
-                                                            Identifier {
-                                                                name: "b".to_string()
-                                                            },
-                                                            Box::new(Variable::Variable(
-                                                                Identifier {
-                                                                    name: "r".to_string()
-                                                                }
-                                                            )),
-                                                        )
-                                                    ))
-                                                },
-                                            ])
-                                        }),
-                                        Box::new(Command::Chain(
-                                            PrimitiveCommand::Append(Append {
-                                                variable: Variable::Variable(Identifier {
-                                                    name: "x".to_string()
-                                                }),
-                                                expr: Expr::Value(Value::String("it".to_string()))
-                                            }),
-                                            Box::new(Command::Chain(
-                                                PrimitiveCommand::LocalAssignment(Assignment {
-                                                    variable: Variable::Variable(Identifier {
-                                                        name: "y".to_string()
-                                                    }),
-                                                    expr: Expr::Value(Value::String(
-                                                        "temp_t".to_string()
-                                                    ))
-                                                }),
-                                                Box::new(Command::Chain(
-                                                    PrimitiveCommand::ForEach(ForEach {
-                                                        value: Variable::Variable(Identifier {
-                                                            name: "x".to_string()
-                                                        }),
-                                                        list: Variable::Variable(Identifier {
-                                                            name: "y".to_string()
-                                                        }),
-                                                        expr: Expr::Value(Value::String(
-                                                            "temp_i".to_string()
-                                                        ))
-                                                    }),
-                                                    Box::new(Command::Chain(
-                                                        PrimitiveCommand::SetDelegation(
-                                                            Delegation {
-                                                                target: Target::All,
-                                                                delegator: Principal {
-                                                                    ident: Identifier {
-                                                                        name: "jack".to_string()
-                                                                    }
-                                                                },
-                                                                right: Right::Read,
-                                                                delegated: Principal {
-                                                                    ident: Identifier {
-                                                                        name: "bob".to_string()
-                                                                    }
-                                                                }
-                                                            }
-                                                        ),
-                                                        Box::new(Command::Chain(
-                                                            PrimitiveCommand::DeleteDelegation(
-                                                                Delegation {
-                                                                    target: Target::Variable(
-                                                                        Identifier {
-                                                                            name: "x".to_string()
-                                                                        }
-                                                                    ),
-                                                                    delegator: Principal {
-                                                                        ident: Identifier {
-                                                                            name: "jack"
-                                                                                .to_string()
-                                                                        }
-                                                                    },
-                                                                    right: Right::Read,
-                                                                    delegated: Principal {
-                                                                        ident: Identifier {
-                                                                            name: "bob".to_string()
-                                                                        }
-                                                                    }
-                                                                }
-                                                            ),
-                                                            Box::new(Command::Chain(
-                                                                PrimitiveCommand::DefaultDelegator(
-                                                                    Principal {
-                                                                        ident: Identifier {
-                                                                            name: "jack"
-                                                                                .to_string()
-                                                                        }
-                                                                    }
-                                                                ),
-                                                                Box::new(Command::Return(
-                                                                    Expr::Value(Value::String(
-                                                                        "SUCCESS".to_string()
-                                                                    ))
-                                                                ))
-                                                            ))
-                                                        ))
-                                                    ))
-                                                ))
-                                            ))
-                                        ))
-                                    ))
-                                ))
-                            ))
-                        ))
-                    ))
-                ))
-            )
+                            expr: Expr::Value(Value::String("has".to_string()))
+                        },
+                    ])
+                }),
+                PrimitiveCommand::Assignment(Assignment {
+                    variable: Variable::Variable(Identifier {
+                        name: "d".to_string()
+                    }),
+                    expr: Expr::Value(Value::Variable(Variable::Member(
+                        Identifier {
+                            name: "b".to_string()
+                        },
+                        Box::new(Variable::Variable(Identifier {
+                            name: "q".to_string()
+                        })),
+                    )))
+                }),
+                PrimitiveCommand::Assignment(Assignment {
+                    variable: Variable::Variable(Identifier {
+                        name: "e".to_string()
+                    }),
+                    expr: Expr::FieldVals(vec![
+                        Assignment {
+                            variable: Variable::Variable(Identifier {
+                                name: "k".to_string()
+                            }),
+                            expr: Expr::Value(Value::Variable(Variable::Variable(Identifier {
+                                name: "d".to_string()
+                            })))
+                        },
+                        Assignment {
+                            variable: Variable::Variable(Identifier {
+                                name: "l".to_string()
+                            }),
+                            expr: Expr::Value(Value::Variable(Variable::Member(
+                                Identifier {
+                                    name: "b".to_string()
+                                },
+                                Box::new(Variable::Variable(Identifier {
+                                    name: "r".to_string()
+                                })),
+                            )))
+                        },
+                    ])
+                }),
+                PrimitiveCommand::Append(Append {
+                    variable: Variable::Variable(Identifier {
+                        name: "x".to_string()
+                    }),
+                    expr: Expr::Value(Value::String("it".to_string()))
+                }),
+                PrimitiveCommand::LocalAssignment(Assignment {
+                    variable: Variable::Variable(Identifier {
+                        name: "y".to_string()
+                    }),
+                    expr: Expr::Value(Value::String("temp_t".to_string()))
+                }),
+                PrimitiveCommand::ForEach(ForEach {
+                    value: Variable::Variable(Identifier {
+                        name: "x".to_string()
+                    }),
+                    list: Variable::Variable(Identifier {
+                        name: "y".to_string()
+                    }),
+                    expr: Expr::Value(Value::String("temp_i".to_string()))
+                }),
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::All,
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "jack".to_string()
+                        }
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "bob".to_string()
+                        }
+                    }
+                }),
+                PrimitiveCommand::DeleteDelegation(Delegation {
+                    target: Target::Variable(Identifier {
+                        name: "x".to_string()
+                    }),
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "jack".to_string()
+                        }
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "bob".to_string()
+                        }
+                    }
+                }),
+                PrimitiveCommand::DefaultDelegator(Principal {
+                    ident: Identifier {
+                        name: "jack".to_string()
+                    }
+                })
+            ],
+            terminator: TerminatorCommand::Return(Expr::Value(Value::String(
+                "SUCCESS".to_string()
+            )))
         }
     );
 
@@ -268,7 +220,8 @@ fn pg4_max_1m_char_prog_eq_1() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("l".to_string()),
-            command: Command::Exit
+            commands: vec![],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -299,7 +252,8 @@ fn pg4_max_1m_char_prog_eq_2() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("l".to_string()),
-            command: Command::Exit
+            commands: vec![],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -358,7 +312,8 @@ fn pg5_tkn_s_max_65k_char_eq() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("l".repeat(65535).to_string()),
-            command: Command::Exit
+            commands: vec![],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -409,7 +364,7 @@ fn pg5_tkn_s_accepted_char_types() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash(r#"AJGFsdkljg543_ , ;\.?!-"#.to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::ChangePassword(ChangePassword {
                     principal: Principal {
                         ident: Identifier {
@@ -418,38 +373,32 @@ fn pg5_tkn_s_accepted_char_types() -> Result<(), Box<dyn Error>> {
                     },
                     password: hash(r#"\\"#.to_string())
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::ChangePassword(ChangePassword {
-                        principal: Principal {
-                            ident: Identifier {
-                                name: "tom2".to_string()
-                            }
-                        },
-                        password: hash(r#"__\.."#.to_string())
-                    }),
-                    Box::new(Command::Chain(
-                        PrimitiveCommand::ChangePassword(ChangePassword {
-                            principal: Principal {
-                                ident: Identifier {
-                                    name: "tom3".to_string()
-                                }
-                            },
-                            password: hash(r#"  rgf\  egfvd.?"#.to_string())
-                        }),
-                        Box::new(Command::Chain(
-                            PrimitiveCommand::ChangePassword(ChangePassword {
-                                principal: Principal {
-                                    ident: Identifier {
-                                        name: "tom4".to_string()
-                                    }
-                                },
-                                password: hash(r#".\ __ ---\"#.to_string())
-                            }),
-                            Box::new(Command::Exit)
-                        ))
-                    ))
-                ))
-            )
+                PrimitiveCommand::ChangePassword(ChangePassword {
+                    principal: Principal {
+                        ident: Identifier {
+                            name: "tom2".to_string()
+                        }
+                    },
+                    password: hash(r#"__\.."#.to_string())
+                }),
+                PrimitiveCommand::ChangePassword(ChangePassword {
+                    principal: Principal {
+                        ident: Identifier {
+                            name: "tom3".to_string()
+                        }
+                    },
+                    password: hash(r#"  rgf\  egfvd.?"#.to_string())
+                }),
+                PrimitiveCommand::ChangePassword(ChangePassword {
+                    principal: Principal {
+                        ident: Identifier {
+                            name: "tom4".to_string()
+                        }
+                    },
+                    password: hash(r#".\ __ ---\"#.to_string())
+                })
+            ],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -505,7 +454,8 @@ fn pg5_tkn_s_empty() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("".to_string()),
-            command: Command::Exit
+            commands: vec![],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -540,7 +490,7 @@ fn pg5_tkn_non_s_max_255_eq() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::Assignment(Assignment {
                     variable: Variable::Variable(Identifier {
                         name: "m".repeat(255).to_string()
@@ -554,24 +504,22 @@ fn pg5_tkn_non_s_max_255_eq() -> Result<(), Box<dyn Error>> {
                         }))
                     )))
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::SetDelegation(Delegation {
-                        target: Target::All,
-                        delegator: Principal {
-                            ident: Identifier {
-                                name: "q".repeat(255).to_string()
-                            }
-                        },
-                        right: Right::Read,
-                        delegated: Principal {
-                            ident: Identifier {
-                                name: "b".repeat(255).to_string()
-                            }
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::All,
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "q".repeat(255).to_string()
                         }
-                    }),
-                    Box::new(Command::Exit)
-                ))
-            )
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "b".repeat(255).to_string()
+                        }
+                    }
+                })
+            ],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -720,7 +668,7 @@ fn pg5_tkn_non_s_accepted_char_types() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::Assignment(Assignment {
                     variable: Variable::Variable(Identifier {
                         name: "C_".to_string()
@@ -734,24 +682,22 @@ fn pg5_tkn_non_s_accepted_char_types() -> Result<(), Box<dyn Error>> {
                         }))
                     )))
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::SetDelegation(Delegation {
-                        target: Target::All,
-                        delegator: Principal {
-                            ident: Identifier {
-                                name: "q_9_aA".to_string()
-                            }
-                        },
-                        right: Right::Read,
-                        delegated: Principal {
-                            ident: Identifier {
-                                name: "a9_".to_string()
-                            }
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::All,
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "q_9_aA".to_string()
                         }
-                    }),
-                    Box::new(Command::Exit)
-                ))
-            )
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "a9_".to_string()
+                        }
+                    }
+                })
+            ],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -811,7 +757,8 @@ fn pg5_n_newline() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("".to_string()),
-            command: Command::Exit
+            commands: vec![],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -859,7 +806,7 @@ fn pg5_spaces_in_bw() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::Assignment(Assignment {
                     variable: Variable::Variable(Identifier {
                         name: "C_".to_string()
@@ -873,24 +820,22 @@ fn pg5_spaces_in_bw() -> Result<(), Box<dyn Error>> {
                         }))
                     )))
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::SetDelegation(Delegation {
-                        target: Target::All,
-                        delegator: Principal {
-                            ident: Identifier {
-                                name: "q_9_aA".to_string()
-                            }
-                        },
-                        right: Right::Read,
-                        delegated: Principal {
-                            ident: Identifier {
-                                name: "a9_".to_string()
-                            }
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::All,
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "q_9_aA".to_string()
                         }
-                    }),
-                    Box::new(Command::Exit)
-                ))
-            )
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "a9_".to_string()
+                        }
+                    }
+                }),
+            ],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -961,7 +906,7 @@ fn pg5_min_whitespace() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::Assignment(Assignment {
                     variable: Variable::Variable(Identifier {
                         name: "C_".to_string()
@@ -975,24 +920,22 @@ fn pg5_min_whitespace() -> Result<(), Box<dyn Error>> {
                         }))
                     )))
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::SetDelegation(Delegation {
-                        target: Target::All,
-                        delegator: Principal {
-                            ident: Identifier {
-                                name: "q_9_aA".to_string()
-                            }
-                        },
-                        right: Right::Read,
-                        delegated: Principal {
-                            ident: Identifier {
-                                name: "a9_".to_string()
-                            }
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::All,
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "q_9_aA".to_string()
                         }
-                    }),
-                    Box::new(Command::Exit)
-                ))
-            )
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "a9_".to_string()
+                        }
+                    }
+                }),
+            ],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -1036,7 +979,7 @@ as principal {} password "{}" do //ignore_me
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::Assignment(Assignment {
                     variable: Variable::Variable(Identifier {
                         name: "C_".to_string()
@@ -1050,24 +993,22 @@ as principal {} password "{}" do //ignore_me
                         }))
                     )))
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::SetDelegation(Delegation {
-                        target: Target::All,
-                        delegator: Principal {
-                            ident: Identifier {
-                                name: "q_9_aA".to_string()
-                            }
-                        },
-                        right: Right::Read,
-                        delegated: Principal {
-                            ident: Identifier {
-                                name: "a9_".to_string()
-                            }
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::All,
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "q_9_aA".to_string()
                         }
-                    }),
-                    Box::new(Command::Exit)
-                ))
-            )
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "a9_".to_string()
+                        }
+                    }
+                }),
+            ],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -1124,7 +1065,7 @@ as principal {} password "{}" do
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::Assignment(Assignment {
                     variable: Variable::Variable(Identifier {
                         name: "C_".to_string()
@@ -1138,24 +1079,22 @@ as principal {} password "{}" do
                         }))
                     )))
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::SetDelegation(Delegation {
-                        target: Target::All,
-                        delegator: Principal {
-                            ident: Identifier {
-                                name: "q_9_aA".to_string()
-                            }
-                        },
-                        right: Right::Read,
-                        delegated: Principal {
-                            ident: Identifier {
-                                name: "a9_".to_string()
-                            }
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::All,
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "q_9_aA".to_string()
                         }
-                    }),
-                    Box::new(Command::Exit)
-                ))
-            )
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "a9_".to_string()
+                        }
+                    }
+                }),
+            ],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -1242,7 +1181,8 @@ fn basic() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("lmao".to_string()),
-            command: Command::Exit
+            commands: vec![],
+            terminator: TerminatorCommand::Exit
         }
     );
 
@@ -1268,11 +1208,12 @@ fn basic_1() -> Result<(), Box<dyn Error>> {
                 }
             },
             password: hash("alices_password".to_string()),
-            command: Command::Return(Expr::Value(Value::Variable(Variable::Variable(
-                Identifier {
+            commands: vec![],
+            terminator: TerminatorCommand::Return(Expr::Value(Value::Variable(
+                Variable::Variable(Identifier {
                     name: "msg".to_string()
-                }
-            ))))
+                })
+            )))
         }
     );
 
@@ -1324,7 +1265,7 @@ return "success"
                 }
             },
             password: hash("admin".to_string()),
-            command: Command::Chain(
+            commands: vec![
                 PrimitiveCommand::CreatePrincipal(CreatePrincipal {
                     principal: Principal {
                         ident: Identifier {
@@ -1333,38 +1274,34 @@ return "success"
                     },
                     password: hash("alices_password".to_string())
                 }),
-                Box::new(Command::Chain(
-                    PrimitiveCommand::Assignment(Assignment {
-                        variable: Variable::Variable(Identifier {
-                            name: "msg".to_string()
-                        }),
-                        expr: Expr::Value(Value::String(
-                            "Hi Alice. Good luck in Build-it, Break-it, Fix-it!".to_string()
-                        ))
+                PrimitiveCommand::Assignment(Assignment {
+                    variable: Variable::Variable(Identifier {
+                        name: "msg".to_string()
                     }),
-                    Box::new(Command::Chain(
-                        PrimitiveCommand::SetDelegation(Delegation {
-                            target: Target::Variable(Identifier {
-                                name: "msg".to_string()
-                            }),
-                            delegator: Principal {
-                                ident: Identifier {
-                                    name: "admin".to_string()
-                                }
-                            },
-                            right: Right::Read,
-                            delegated: Principal {
-                                ident: Identifier {
-                                    name: "alice".to_string()
-                                }
-                            }
-                        }),
-                        Box::new(Command::Return(Expr::Value(Value::String(
-                            "success".to_string()
-                        ))))
+                    expr: Expr::Value(Value::String(
+                        "Hi Alice. Good luck in Build-it, Break-it, Fix-it!".to_string()
                     ))
-                ))
-            )
+                }),
+                PrimitiveCommand::SetDelegation(Delegation {
+                    target: Target::Variable(Identifier {
+                        name: "msg".to_string()
+                    }),
+                    delegator: Principal {
+                        ident: Identifier {
+                            name: "admin".to_string()
+                        }
+                    },
+                    right: Right::Read,
+                    delegated: Principal {
+                        ident: Identifier {
+                            name: "alice".to_string()
+                        }
+                    }
+                })
+            ],
+            terminator: TerminatorCommand::Return(Expr::Value(Value::String(
+                "success".to_string()
+            )))
         }
     );
 

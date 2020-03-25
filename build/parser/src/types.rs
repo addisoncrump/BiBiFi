@@ -88,8 +88,10 @@ pub struct Program {
     pub principal: Principal,
     /// The password used to authenticate the principal.
     pub password: [u8; 32],
-    /// The command entrypoint for the program.
-    pub command: Command,
+    /// The commands for the program.
+    pub commands: Vec<PrimitiveCommand>,
+    /// The termination command for the program
+    pub terminator: TerminatorCommand,
 }
 
 /// Each program is run as a different user, referred to as a principal. Whichever principal runs
@@ -105,7 +107,7 @@ pub struct Principal {
 
 /// A command is a single executable element of the program. See each member for details.
 #[derive(Hash, Clone, PartialEq, Eq, Debug)]
-pub enum Command {
+pub enum TerminatorCommand {
     /// If the command is exit, then the server outputs the status code is EXITING, terminates the
     /// client connection, and halts with return code 0 (and thus does not accept any more
     /// connections). This command is only allowed if the current principal is admin; otherwise it
@@ -115,9 +117,6 @@ pub enum Command {
     /// code RETURNING and the JSON representation of the result for the key "output"; the output
     /// format is given at the end of this document.
     Return(Expr),
-    /// This runs a single primitive command, then goes to the next. See the
-    /// [PrimitiveCommand](enum.PrimitiveCommand.html) documentation.
-    Chain(PrimitiveCommand, Box<Command>),
 }
 
 /// Other than return and exit, a <cmd> is an ordered list of primitive commands separated by

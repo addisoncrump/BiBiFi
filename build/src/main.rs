@@ -3,11 +3,11 @@
 //at https://www.reddit.com/r/rust/comments/e82v07/my_introduction_to_tokio_streaming/
 use bibifi_runtime::status::Status::EXITING;
 use bibifi_runtime::BiBiFi;
-use futures::io::Error;
-use futures::{FutureExt, StreamExt as FStreamExt, TryFutureExt};
+use futures::{StreamExt as FStreamExt, TryFutureExt};
 use regex::Regex;
 use signal_hook::{iterator::Signals, SIGTERM};
 use std::env;
+use tokio::io::AsyncReadExt;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::net::TcpListener;
 use tokio::stream::StreamExt as TStreamExt;
@@ -19,7 +19,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if port.is_none() {
         std::process::exit(255);
     }
-    let port = port.unwrap().parse::<u16>();
+    let port = port.unwrap();
+    if port.starts_with('0') {
+        std::process::exit(255);
+    }
+    let port = port.parse::<u16>();
     let port = if let Ok(port) = port {
         if port < 1024 {
             std::process::exit(255);
@@ -65,10 +69,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tokio::spawn(async move {
             let (reader, writer) = stream.split();
 
-            let mut buf_reader = BufReader::new(reader);
+            let mut buf_reader = BufReader::new(reader).take(1000000u64);
             let mut buf_writer = BufWriter::new(writer);
-            let mut buf = vec![];
+            let mut buf = Vec::with_capacity(1000000usize);
             let mut ast_count = 0u8;
+
+            buf_reader.set_limit(1000000u64);
 
             while ast_count < 3 {
                 match buf_reader.read_until(b'*', &mut buf).await {

@@ -10,11 +10,16 @@ use types::*;
 peg::parser! {
     grammar program_parser() for str {
         pub rule program<'a>() -> Program
-            = (comment() "\n")* _ "as" __ "principal" __ !keyword() p:principal() __ "password" __ s:string() __ "do" _ comment()? "\n" cmd:line() _ "***" _ comment()? ("\n" comment())* {
+            = (comment() "\n")* _ "as" __ "principal" __ !keyword() p:principal() __ "password" __ s:string() __ "do" _ comment()? "\n"
+                    (comment() "\n")*
+                    cmd:(a:line() "\n" { a })*
+                    term:terminator_command() "\n"
+                    _ "***" _ (comment() _) ** "\n" {
                 Program {
                     principal: p,
                     password: hash(s),
-                    command: cmd,
+                    commands: cmd,
+                    terminator: term
                 }
             }
 
@@ -35,14 +40,12 @@ peg::parser! {
                       | '!'
                       | '-' ]*<0,65535>) "\"" { s.to_string() }
 
-        rule line() -> Command
-            = c:command() { c }
-            / comment() "\n" l:line() { l }
+        rule line() -> PrimitiveCommand
+            = _ c:primitive_command() _ (comment() _) ** "\n" { c }
 
-        rule command() -> Command
-            = _ "exit" _ (comment() _)? "\n" { Command::Exit }
-            / _ "return" __ e:expr() _ (comment() _)? "\n" { Command::Return(e) }
-            / _ p:primitive_command() _ (comment() _)? "\n" c:line() { Command::Chain(p, Box::new(c)) }
+        rule terminator_command() -> TerminatorCommand
+            = _ "exit" _ (comment() _) ** "\n" { TerminatorCommand::Exit }
+            / _ "return" __ e:expr() _ (comment() _) ** "\n" { TerminatorCommand::Return(e) }
 
         rule identifier() -> Identifier
             = s:$(['A'..='Z'

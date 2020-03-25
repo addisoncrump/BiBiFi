@@ -1,7 +1,7 @@
 use bibifi_database::{Status as DBStatus, Value};
 use serde::Serialize;
 
-#[derive(Serialize, Debug, Eq, PartialEq)]
+#[derive(Clone, Serialize, Debug, Eq, PartialEq)]
 pub struct Entry {
     pub status: Status,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -9,7 +9,7 @@ pub struct Entry {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Serialize, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Serialize, Debug, Eq, PartialEq)]
 pub enum Status {
     CREATE_PRINCIPAL,
     CHANGE_PASSWORD,

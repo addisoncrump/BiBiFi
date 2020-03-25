@@ -438,7 +438,27 @@ impl Database {
                     FAILED
                 }
             }
-            Value::List(_) => FAILED,
+            Value::List(list) => {
+                if let Some(existing) = self.variables.get(variable).cloned() {
+                    if self.check_right(variable, &Right::Write, user)
+                        || self.check_right(variable, &Right::Append, user)
+                    {
+                        if let Value::List(mut elist) = existing {
+                            for item in list {
+                                elist.push(item.clone());
+                            }
+                            self.variables.insert(variable.clone(), Value::List(elist));
+                            SUCCESS
+                        } else {
+                            FAILED
+                        }
+                    } else {
+                        DENIED
+                    }
+                } else {
+                    FAILED
+                }
+            }
         }
     }
 
