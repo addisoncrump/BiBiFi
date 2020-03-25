@@ -257,19 +257,24 @@ fn basic_full_4() -> Result<(), Box<dyn Error>> {
 
     //add principals to database
     my_database.create_principal(&"admin".to_string(), &"bob".to_string(), &hash("".to_string())); // empty string password
+    my_database.create_principal(&"admin".to_string(), &"alice".to_string(), &hash("".to_string())); // empty string password
     my_database.create_principal(&"admin".to_string(), &"tom".to_string(), &hash("tom_pass".to_string()));
 
     // lets say, bob created my_var and delegated all permissions to everyone
     my_database.set(&"bob".to_string(), &"my_var1".to_string(), &Value::Immediate("lmao".to_string()));
 
-    // give the permission of my_var1 to tom
+    // give the permission of my_var1 to alice
     my_database.delegate(&"admin".to_string(), &Target::Variable("my_var1".to_string()), &"bob".to_string(),
+                         &Right::Read, &"alice".to_string());
+
+    // give the permission of my_var1 to tom
+    my_database.delegate(&"admin".to_string(), &Target::Variable("my_var1".to_string()), &"alice".to_string(),
                          &Right::Read, &"tom".to_string());
 
     assert_eq!(my_database.check_right(&"my_var1".to_string(), &Right::Read, &"tom".to_string()), true);
 
     // now, tom can delete the rights himself
-    my_database.undelegate(&"tom".to_string(), &Target::Variable("my_var1".to_string()), &"bob".to_string(),
+    my_database.undelegate(&"tom".to_string(), &Target::Variable("my_var1".to_string()), &"alice".to_string(),
                            &Right::Read, &"tom".to_string());
 
     assert_eq!(my_database.check_right(&"my_var1".to_string(), &Right::Read, &"tom".to_string()), false);
