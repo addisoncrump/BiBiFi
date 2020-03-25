@@ -349,8 +349,8 @@ impl BiBiFi {
                     match &fe.list {
                         Variable::Variable(listi) => {
                             let mut locallocals = locals.clone();
-                            let modification = |item: &Value| {
-                                locallocals.insert(i.name.clone(), item.clone());
+                            let modification = |item: Value| {
+                                locallocals.insert(i.name.clone(), item);
                                 let res = match BiBiFi::evaluate(
                                     database,
                                     &locallocals,
@@ -367,7 +367,7 @@ impl BiBiFi {
                             if let Some(list) = locals.get(&listi.name).cloned() {
                                 match list {
                                     Value::List(list) => {
-                                        let mut modified = list.iter().map(modification);
+                                        let mut modified = list.iter().cloned().map(modification);
                                         if let Some(bad) = modified.find(|item| item.is_err()) {
                                             match bad {
                                                 Err(e) => e,
@@ -398,7 +398,8 @@ impl BiBiFi {
                                 {
                                     Ok(list) => match list {
                                         Value::List(list) => {
-                                            let mut modified = list.iter().map(modification);
+                                            let mut modified =
+                                                list.iter().cloned().map(modification);
                                             if let Some(bad) = modified.find(|item| item.is_err()) {
                                                 match bad {
                                                     Err(e) => e,
