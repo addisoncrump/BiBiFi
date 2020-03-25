@@ -1,3 +1,4 @@
+use crate::Status::{DENIED, FAILED, SUCCESS};
 use serde::Serialize;
 use std::collections::{HashMap, VecDeque};
 
@@ -15,9 +16,25 @@ enum VPrincipal {
     User(Principal, [u8; 32]),
 }
 
+impl ToString for VPrincipal {
+    fn to_string(&self) -> String {
+        match self {
+            VPrincipal::Admin(_) => "admin".to_string(),
+            VPrincipal::Anyone(p) | VPrincipal::User(p, _) => p.to_string(),
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 struct Principal {
+    name: String,
     delegations: Vec<Delegation>,
+}
+
+impl ToString for Principal {
+    fn to_string(&self) -> String {
+        self.name.clone()
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize)]
@@ -29,7 +46,7 @@ pub enum Value {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 struct Delegation {
-    target: Target,
+    target: String,
     delegator: String,
     right: Right,
 }
@@ -48,11 +65,19 @@ pub enum Right {
     Delegate,
 }
 
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
+pub enum Status {
+    SUCCESS,
+    DENIED,
+    FAILED,
+}
+
 impl Database {
     pub fn new(admin_hash: [u8; 32]) -> Database {
         let mut principals = HashMap::new();
         principals.insert("admin".to_string(), VPrincipal::Admin(admin_hash));
         let anyone = VPrincipal::Anyone(Principal {
+            name: "anyone".to_string(),
             delegations: Vec::new(),
         });
         principals.insert("anyone".to_string(), anyone.clone());
@@ -63,127 +88,219 @@ impl Database {
         }
     }
 
-    pub fn check_pass(&self, principal: &String, hash: &[u8; 32]) -> bool {
+    pub fn check_pass(&self, principal: &String, hash: &[u8; 32]) -> Status {
         self.principals
             .get(principal)
             .map(|principal| match *principal {
-                VPrincipal::Anyone(_) => false,
-                VPrincipal::User(_, checked) | VPrincipal::Admin(checked) => &checked == hash,
+                VPrincipal::Anyone(_) => DENIED,
+                VPrincipal::User(_, checked) | VPrincipal::Admin(checked) => {
+                    if &checked == hash {
+                        SUCCESS
+                    } else {
+                        DENIED
+                    }
+                }
             })
-            .unwrap_or(false)
+            .unwrap_or(FAILED)
     }
 
-    /// Preconditions: delegator and delegated must exist, you should check if acting principal has right
     pub fn delegate(
         &mut self,
+        user: &String,
         target: &Target,
         delegator: &String,
         right: &Right,
         delegated: &String,
-    ) {
-        assert!(self.principals.contains_key(delegator));
-        let pdelegated = self
-            .principals
-            .get_mut(delegated)
-            .expect("Precondition of delegated existence not met.");
-        match pdelegated {
-            VPrincipal::Admin(_) => {}
-            VPrincipal::Anyone(ref mut p) | VPrincipal::User(ref mut p, _) => {
-                let delegation = Delegation {
-                    target: target.clone(),
-                    delegator: delegator.clone(),
-                    right: right.clone(),
-                };
-                p.delegations.push(delegation);
+    ) -> Status {
+        if user == "admin" || user == delegator {
+            if let Some(pdelegator) = self.principals.get(delegator).cloned() {
+                if let Some(pdelegated) = self.principals.get(delegated).cloned() {
+                    let mut p = match pdelegated {
+                        VPrincipal::Admin(_) => {
+                            if let Target::Variable(variable) = target {
+                                if !(self.variables.contains_key(variable)) {
+                                    return FAILED;
+                                } else if !(self.direct_check_right(
+                                    variable,
+                                    &Right::Delegate,
+                                    &pdelegator,
+                                )) {
+                                    return DENIED;
+                                }
+                            }
+                            return SUCCESS;
+                        }
+                        VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => p.clone(),
+                    };
+                    if let Target::Variable(variable) = target {
+                        if self.direct_check_right(variable, &Right::Delegate, &pdelegator) {
+                            let delegation = Delegation {
+                                target: variable.clone(),
+                                delegator: delegator.to_string(),
+                                right: right.clone(),
+                            };
+                            p.delegations.push(delegation);
+                        } else {
+                            return DENIED;
+                        }
+                    } else {
+                        for variable in self.variables.keys() {
+                            if self.direct_check_right(variable, &Right::Delegate, &pdelegator) {
+                                let delegation = Delegation {
+                                    target: variable.clone(),
+                                    delegator: delegator.to_string(),
+                                    right: right.clone(),
+                                };
+                                p.delegations.push(delegation);
+                            }
+                        }
+                    }
+                    match pdelegated {
+                        VPrincipal::Anyone(_) => self
+                            .principals
+                            .insert("anyone".to_string(), VPrincipal::Anyone(p)),
+                        VPrincipal::User(_, hash) => self
+                            .principals
+                            .insert(p.name.clone(), VPrincipal::User(p, hash.clone())),
+                        _ => panic!(),
+                    };
+                    return SUCCESS;
+                }
             }
-        };
+        }
+        FAILED
     }
 
-    /// Preconditions: delegator and delegated must exist, you should check if acting principal has right
     pub fn undelegate(
         &mut self,
+        user: &String,
         target: &Target,
         delegator: &String,
         right: &Right,
         delegated: &String,
-    ) {
-        assert!(self.principals.contains_key(delegator));
-        let delegated = self
-            .principals
-            .get_mut(delegated)
-            .expect("Precondition of delegated existence not met.");
-        match delegated {
-            VPrincipal::Admin(_) => {}
-            VPrincipal::Anyone(ref mut p) | VPrincipal::User(ref mut p, _) => {
-                let delegation = Delegation {
-                    target: target.clone(),
-                    delegator: delegator.clone(),
-                    right: right.clone(),
-                };
-                p.delegations.retain(|d| d != &delegation);
+    ) -> Status {
+        if user == "admin" || user == delegator {
+            if self.principals.contains_key(delegator) {
+                if let Some(pdelegated) = self.principals.get(delegated).cloned() {
+                    match pdelegated {
+                        VPrincipal::Admin(_) => {}
+                        VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => {
+                            let mut p = p.clone();
+                            let delegations = if let Target::Variable(variable) = target {
+                                let delegation = Delegation {
+                                    target: variable.clone(),
+                                    delegator: delegator.clone(),
+                                    right: right.clone(),
+                                };
+                                vec![delegation]
+                            } else {
+                                self.variables
+                                    .keys()
+                                    .clone()
+                                    .filter_map(|variable| {
+                                        if self.check_right(variable, &Right::Delegate, delegator) {
+                                            Some(Delegation {
+                                                target: variable.clone(),
+                                                delegator: delegator.clone(),
+                                                right: right.clone(),
+                                            })
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                    .collect()
+                            };
+                            p.delegations.retain(|d| !delegations.contains(d));
+                            match pdelegated {
+                                VPrincipal::Anyone(_) => self
+                                    .principals
+                                    .insert("anyone".to_string(), VPrincipal::Anyone(p)),
+                                VPrincipal::User(_, hash) => self
+                                    .principals
+                                    .insert(p.name.clone(), VPrincipal::User(p, hash.clone())),
+                                _ => panic!(),
+                            };
+                            return SUCCESS;
+                        }
+                    }
+                }
+            }
+        }
+        FAILED
+    }
+
+    pub fn set_default_delegator(&mut self, user: &String, delegator: &String) -> Status {
+        if user == "admin" {
+            self.def_delegator = delegator.clone();
+            SUCCESS
+        } else {
+            DENIED
+        }
+    }
+
+    pub fn create_principal(
+        &mut self,
+        user: &String,
+        principal: &String,
+        hash: &[u8; 32],
+    ) -> Status {
+        if user != "admin" {
+            DENIED
+        } else if self.principals.contains_key(principal) {
+            FAILED
+        } else {
+            let name = principal;
+            let principal = Principal {
+                name: name.clone(),
+                delegations: Vec::new(),
+            };
+            if self.principals.contains_key(&self.def_delegator) {
+                self.principals.insert(
+                    principal.name.clone(),
+                    VPrincipal::User(principal, hash.clone()),
+                );
+                for right in &[Right::Read, Right::Write, Right::Append, Right::Delegate] {
+                    self.delegate(user, &Target::All, &self.def_delegator.clone(), right, name);
+                }
+                SUCCESS
+            } else {
+                FAILED
             }
         }
     }
 
-    /// Preconditions: none, but you should check if the acting principal is admin
-    pub fn set_default_delegator(&mut self, delegator: &String) {
-        self.def_delegator = delegator.clone();
-    }
-
-    /// Preconditions: none
-    pub fn check_principal(&self, principal: &String) -> bool {
-        self.principals.contains_key(principal)
-    }
-
-    /// Preconditions: none, but you should check if principal exists first
-    pub fn create_principal(&mut self, principal: &String, hash: &[u8; 32]) {
-        let mut delegations = Vec::new();
-        delegations.push(Delegation {
-            target: Target::All,
-            delegator: self.def_delegator.clone(),
-            right: Right::Read,
-        });
-        delegations.push(Delegation {
-            target: Target::All,
-            delegator: self.def_delegator.clone(),
-            right: Right::Write,
-        });
-        delegations.push(Delegation {
-            target: Target::All,
-            delegator: self.def_delegator.clone(),
-            right: Right::Append,
-        });
-        delegations.push(Delegation {
-            target: Target::All,
-            delegator: self.def_delegator.clone(),
-            right: Right::Delegate,
-        });
-        self.principals.insert(
-            principal.clone(),
-            VPrincipal::User(Principal { delegations }, hash.clone()),
-        );
-    }
-
-    /// Preconditions: principal must exist, and you should check if current user is admin or principal
-    pub fn change_password(&mut self, principal: &String, hash: &[u8; 32]) {
-        let principal = self
-            .principals
-            .get_mut(principal)
-            .expect("Precondition of principal existence not met.");
-        match principal {
-            VPrincipal::Anyone(_) => {}
-            VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) => {
-                *existing = hash.clone()
+    pub fn change_password(
+        &mut self,
+        user: &String,
+        principal: &String,
+        hash: &[u8; 32],
+    ) -> Status {
+        if user != "admin" || user == principal {
+            if let Some(principal) = self.principals.get_mut(principal) {
+                match principal {
+                    VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) => {
+                        *existing = hash.clone();
+                        SUCCESS
+                    }
+                    VPrincipal::Anyone(_) => FAILED,
+                }
+            } else {
+                FAILED
             }
+        } else {
+            DENIED
         }
     }
 
-    /// Preconditions: principal must exist
-    pub fn check_right(&self, target: &Target, right: &Right, principal: &String) -> bool {
+    fn check_right(&self, target: &String, right: &Right, principal: &String) -> bool {
         let principal = self
             .principals
             .get(principal)
             .expect("Precondition of principal existence not met.");
+        self.direct_check_right(target, right, principal)
+    }
+
+    fn direct_check_right(&self, target: &String, right: &Right, principal: &VPrincipal) -> bool {
         match principal {
             VPrincipal::Admin(_) => true,
             VPrincipal::Anyone(p) | VPrincipal::User(p, _) => {
@@ -191,9 +308,7 @@ impl Database {
                 let mut searching: VecDeque<&Delegation> = p
                     .delegations
                     .iter()
-                    .filter(|d| {
-                        (&d.target == &Target::All || &d.target == target) && &d.right == right
-                    })
+                    .filter(|d| &d.target == target && &d.right == right)
                     .collect();
                 while !searching.is_empty() {
                     let curr = searching.pop_front().unwrap(); // guaranteed by while conditionx
@@ -206,10 +321,7 @@ impl Database {
                         VPrincipal::Anyone(p) | VPrincipal::User(p, _) => p
                             .delegations
                             .iter()
-                            .filter(|d| {
-                                (&d.target == &Target::All || &d.target == target)
-                                    && &d.right == right
-                            })
+                            .filter(|d| &d.target == target && &d.right == right)
                             .for_each(|d| searching.push_back(d)),
                     }
                 }
@@ -218,19 +330,49 @@ impl Database {
         }
     }
 
-    /// Preconditions: none, but you should probably check if the user has rights
-    pub fn set(&mut self, variable: &String, value: &Value) {
-        self.variables.insert(variable.clone(), value.clone());
+    pub fn set(&mut self, user: &String, variable: &String, value: &Value) -> Status {
+        if !self.variables.contains_key(variable) || self.check_right(variable, &Right::Write, user)
+        {
+            self.variables.insert(variable.clone(), value.clone());
+            SUCCESS
+        } else {
+            DENIED
+        }
     }
 
-    /// Preconditions: non, but you should probably check if the user has rights
-    pub fn get(&self, variable: &String) -> Option<&Value> {
-        self.variables.get(variable)
+    pub fn append(&mut self, user: &String, variable: &String, value: &Value) -> Status {
+        match value {
+            Value::Immediate(_) | Value::FieldVals(_) => {
+                if let Some(existing) = self.variables.get(variable).cloned() {
+                    if self.check_right(variable, &Right::Write, user)
+                        || self.check_right(variable, &Right::Append, user)
+                    {
+                        if let Value::List(mut list) = existing {
+                            list.push(value.clone());
+                            self.variables.insert(variable.clone(), Value::List(list));
+                            SUCCESS
+                        } else {
+                            FAILED
+                        }
+                    } else {
+                        DENIED
+                    }
+                } else {
+                    FAILED
+                }
+            }
+            Value::List(_) => FAILED,
+        }
     }
 
-    /// Preconditions: non, but you should probably check if the user has rights
-    pub fn get_mut(&mut self, variable: &String) -> Option<&mut Value> {
-        self.variables.get_mut(variable)
+    pub fn get(&self, user: &String, variable: &String) -> Result<&Value, Status> {
+        if !self.variables.contains_key(variable) {
+            Err(FAILED)
+        } else if self.check_right(variable, &Right::Read, user) {
+            Ok(self.variables.get(variable).unwrap())
+        } else {
+            Err(DENIED)
+        }
     }
 }
 
