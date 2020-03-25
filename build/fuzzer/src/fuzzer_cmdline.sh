@@ -18,7 +18,7 @@ while true; do
   radamsa $SEED > input.txt
 
   o_resp=$(netcat 127.0.0.1 $1 <input.txt 2>o_err)
-  dut_resp=$(netcat 127.0.0.1 $1 <input.txt 2>dut_err) #replace this with dut when it works
+  dut_resp=$(netcat 0.0.0.0 $2 <input.txt 2>dut_err) #replace this with dut when it works
 
 #  if read -t 5 oracle_line <$oracle_pipe; then
 #    echo "Here 56"
