@@ -79,13 +79,13 @@ impl BiBiFi {
                                 BiBiFi::for_each(&mut database, &mut locals, &program, fe)
                             }
                             PrimitiveCommand::SetDelegation(d) => {
-                                BiBiFi::set_delegation(&mut database, &mut locals, &program, d)
+                                BiBiFi::set_delegation(&mut database, &program, d)
                             }
                             PrimitiveCommand::DeleteDelegation(d) => {
-                                BiBiFi::delete_delegation(&mut database, &mut locals, &program, d)
+                                BiBiFi::delete_delegation(&mut database, &program, d)
                             }
                             PrimitiveCommand::DefaultDelegator(p) => {
-                                BiBiFi::default_delegator(&mut database, &mut locals, &program, p)
+                                BiBiFi::default_delegator(&mut database, &program, p)
                             }
                         };
                         if res.status == Status::DENIED || res.status == Status::FAILED {
@@ -179,13 +179,13 @@ impl BiBiFi {
         database: &mut Database,
         locals: &mut HashMap<String, Value>,
         program: &Program,
-        cp: &Assignment,
+        a: &Assignment,
     ) -> Entry {
-        let evaluated = match BiBiFi::evaluate(database, locals, program, &cp.expr) {
+        let evaluated = match BiBiFi::evaluate(database, locals, program, &a.expr) {
             Ok(evaluated) => evaluated,
             Err(e) => return e,
         };
-        match &cp.variable {
+        match &a.variable {
             Variable::Variable(i) => {
                 if locals.contains_key(&i.name) {
                     locals.insert(i.name.clone(), evaluated);
@@ -253,10 +253,10 @@ impl BiBiFi {
         database: &mut Database,
         locals: &mut HashMap<String, Value>,
         program: &Program,
-        cp: &Append,
+        ap: &Append,
     ) -> Entry {
-        if let Variable::Variable(i) = &cp.variable {
-            let evaluated = match BiBiFi::evaluate(database, locals, program, &cp.expr) {
+        if let Variable::Variable(i) = &ap.variable {
+            let evaluated = match BiBiFi::evaluate(database, locals, program, &ap.expr) {
                 Ok(evaluated) => match evaluated {
                     Value::Immediate(_) | Value::FieldVals(_) => evaluated,
                     Value::List(_) => {
@@ -293,9 +293,9 @@ impl BiBiFi {
         database: &mut Database,
         locals: &mut HashMap<String, Value>,
         program: &Program,
-        cp: &Assignment,
+        la: &Assignment,
     ) -> Entry {
-        match &cp.variable {
+        match &la.variable {
             Variable::Variable(i) => {
                 if database.contains(&i.name) || locals.contains_key(&i.name) {
                     Entry {
@@ -303,7 +303,7 @@ impl BiBiFi {
                         output: None,
                     }
                 } else {
-                    let evaluated = match BiBiFi::evaluate(database, locals, program, &cp.expr) {
+                    let evaluated = match BiBiFi::evaluate(database, locals, program, &la.expr) {
                         Ok(evaluated) => match evaluated {
                             Value::Immediate(_) | Value::FieldVals(_) => evaluated,
                             Value::List(_) => {
@@ -361,7 +361,7 @@ impl BiBiFi {
                             };
                             locals.remove(&i.name).unwrap();
 
-                            if let Some(list) = locals.get(&listi.name) {
+                            if let Some(list) = locals.get(&listi.name).cloned() {
                                 match list {
                                     Value::List(list) => {
                                         let mut modified = list.iter().map(modification);
@@ -389,7 +389,10 @@ impl BiBiFi {
                                     },
                                 }
                             } else {
-                                match database.get(&program.principal.ident.name, &listi.name) {
+                                match database
+                                    .get(&program.principal.ident.name, &listi.name)
+                                    .map(|value| value.clone())
+                                {
                                     Ok(list) => match list {
                                         Value::List(list) => {
                                             let mut modified = list.iter().map(modification);
@@ -437,12 +440,7 @@ impl BiBiFi {
         }
     }
 
-    fn set_delegation(
-        database: &mut Database,
-        locals: &mut HashMap<String, Value>,
-        program: &Program,
-        d: &Delegation,
-    ) -> Entry {
+    fn set_delegation(database: &mut Database, program: &Program, d: &Delegation) -> Entry {
         Entry::from(
             database.delegate(
                 &program.principal.ident.name,
@@ -463,12 +461,7 @@ impl BiBiFi {
         )
     }
 
-    fn delete_delegation(
-        database: &mut Database,
-        locals: &mut HashMap<String, Value>,
-        program: &Program,
-        d: &Delegation,
-    ) -> Entry {
+    fn delete_delegation(database: &mut Database, program: &Program, d: &Delegation) -> Entry {
         Entry::from(
             database.undelegate(
                 &program.principal.ident.name,
@@ -489,12 +482,7 @@ impl BiBiFi {
         )
     }
 
-    fn default_delegator(
-        database: &mut Database,
-        locals: &mut HashMap<String, Value>,
-        program: &Program,
-        p: &Principal,
-    ) -> Entry {
+    fn default_delegator(database: &mut Database, program: &Program, p: &Principal) -> Entry {
         Entry::from(
             database.set_default_delegator(&program.principal.ident.name, &p.ident.name),
             Status::DEFAULT_DELEGATOR,
