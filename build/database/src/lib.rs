@@ -136,7 +136,9 @@ impl Database {
                         VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => p.clone(),
                     };
                     if let Target::Variable(variable) = target {
-                        if self.direct_check_right(variable, &Right::Delegate, &pdelegator) {
+                        if user == "admin"
+                            || self.direct_check_right(variable, &Right::Delegate, &pdelegator)
+                        {
                             let delegation = Delegation {
                                 target: variable.clone(),
                                 delegator: delegator.to_string(),
@@ -148,7 +150,9 @@ impl Database {
                         }
                     } else {
                         for variable in self.variables.keys() {
-                            if self.direct_check_right(variable, &Right::Delegate, &pdelegator) {
+                            if user == "admin"
+                                || self.direct_check_right(variable, &Right::Delegate, &pdelegator)
+                            {
                                 let delegation = Delegation {
                                     target: variable.clone(),
                                     delegator: delegator.to_string(),
