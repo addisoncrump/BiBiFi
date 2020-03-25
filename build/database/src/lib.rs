@@ -182,7 +182,7 @@ impl Database {
         right: &Right,
         delegated: &String,
     ) -> Status {
-        if user == "admin" || user == delegator {
+        if user == "admin" || user == delegator || user == delegated {
             if self.principals.contains_key(delegator) {
                 if let Some(pdelegated) = self.principals.get(delegated).cloned() {
                     match pdelegated {
@@ -190,12 +190,16 @@ impl Database {
                         VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => {
                             let mut p = p.clone();
                             let delegations = if let Target::Variable(variable) = target {
-                                let delegation = Delegation {
-                                    target: variable.clone(),
-                                    delegator: delegator.clone(),
-                                    right: right.clone(),
-                                };
-                                vec![delegation]
+                                if self.check_right(variable, &Right::Delegate, delegator) {
+                                    let delegation = Delegation {
+                                        target: variable.clone(),
+                                        delegator: delegator.clone(),
+                                        right: right.clone(),
+                                    };
+                                    vec![delegation]
+                                } else {
+                                    return DENIED;
+                                }
                             } else {
                                 self.variables
                                     .keys()
@@ -265,7 +269,16 @@ impl Database {
                     VPrincipal::User(principal, hash.clone()),
                 );
                 for right in &[Right::Read, Right::Write, Right::Append, Right::Delegate] {
-                    self.delegate(user, &Target::All, &self.def_delegator.clone(), right, name);
+                    match self.delegate(
+                        user,
+                        &Target::All,
+                        &self.def_delegator.clone(),
+                        right,
+                        name,
+                    ) {
+                        SUCCESS => {}
+                        _ => panic!(),
+                    }
                 }
                 SUCCESS
             } else {
@@ -281,7 +294,7 @@ impl Database {
         principal: &String,
         hash: &[u8; 32],
     ) -> Status {
-        if user != "admin" || user == principal {
+        if user == "admin" || user == principal {
             if let Some(principal) = self.principals.get_mut(principal) {
                 match principal {
                     VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) => {

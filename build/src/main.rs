@@ -3,7 +3,7 @@
 
 use bibifi_runtime::status::Status::EXITING;
 use bibifi_runtime::BiBiFi;
-use futures::StreamExt as FStreamExt;
+use futures::{FutureExt, StreamExt as FStreamExt, TryFutureExt};
 use regex::Regex;
 use signal_hook::{iterator::Signals, SIGTERM};
 use std::env;
@@ -56,9 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    std::thread::spawn(move || async move {
-        BiBiFi::run(admin_hash, receiver).await;
-    });
+    tokio::spawn(async move { BiBiFi::run(admin_hash, receiver).await });
 
     while let Ok((mut stream, peer)) = socket.accept().await {
         println!("Incoming connection from: {}", peer.to_string());
@@ -94,13 +92,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let buf_string = String::from_utf8_lossy(&buf);
-            // Printout the message received
-            println!("Received message: {}", buf_string);
 
             let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
-            let submission = runtime.submit(buf_string.to_string(), sender);
 
-            if let Some(entries) = tokio::stream::StreamExt::next(&mut receiver).await {
+            if let Some(entries) = runtime
+                .submit(buf_string.to_string(), sender)
+                .then(|_| async move { tokio::stream::StreamExt::next(&mut receiver).await })
+                .await
+            {
                 for entry in entries {
                     match buf_writer
                         .write_all(serde_json::to_string(&entry).unwrap().as_bytes())
@@ -115,8 +114,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-
-            submission.await.unwrap();
         });
     }
 
