@@ -599,4 +599,5 @@ impl BiBiFi {
 }
 
 #[cfg(test)]
+#[forbid(unused_must_use)]
 mod tests;
