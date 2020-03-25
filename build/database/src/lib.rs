@@ -88,6 +88,7 @@ impl Database {
         }
     }
 
+    #[must_use]
     pub fn check_pass(&self, principal: &String, hash: &[u8; 32]) -> Status {
         self.principals
             .get(principal)
@@ -104,6 +105,7 @@ impl Database {
             .unwrap_or(FAILED)
     }
 
+    #[must_use]
     pub fn delegate(
         &mut self,
         user: &String,
@@ -171,6 +173,7 @@ impl Database {
         FAILED
     }
 
+    #[must_use]
     pub fn undelegate(
         &mut self,
         user: &String,
@@ -229,6 +232,7 @@ impl Database {
         FAILED
     }
 
+    #[must_use]
     pub fn set_default_delegator(&mut self, user: &String, delegator: &String) -> Status {
         if user == "admin" {
             self.def_delegator = delegator.clone();
@@ -238,6 +242,7 @@ impl Database {
         }
     }
 
+    #[must_use]
     pub fn create_principal(
         &mut self,
         user: &String,
@@ -269,6 +274,7 @@ impl Database {
         }
     }
 
+    #[must_use]
     pub fn change_password(
         &mut self,
         user: &String,
@@ -292,6 +298,7 @@ impl Database {
         }
     }
 
+    #[must_use]
     fn check_right(&self, target: &String, right: &Right, principal: &String) -> bool {
         let principal = self
             .principals
@@ -300,6 +307,7 @@ impl Database {
         self.direct_check_right(target, right, principal)
     }
 
+    #[must_use]
     fn direct_check_right(&self, target: &String, right: &Right, principal: &VPrincipal) -> bool {
         match principal {
             VPrincipal::Admin(_) => true,
@@ -330,17 +338,21 @@ impl Database {
         }
     }
 
+    #[must_use]
     pub fn set(&mut self, user: &String, variable: &String, value: &Value) -> Status {
         if !self.variables.contains_key(variable) {
             self.variables.insert(variable.clone(), value.clone());
             for right in &[Right::Read, Right::Write, Right::Append, Right::Delegate] {
-                self.delegate(
+                match self.delegate(
                     &"admin".to_string(),
                     &Target::All,
                     &"admin".to_string(),
                     right,
                     user,
-                );
+                ) {
+                    SUCCESS => {}
+                    _ => panic!(),
+                }
             }
             SUCCESS
         } else if self.check_right(variable, &Right::Write, user) {
@@ -351,6 +363,7 @@ impl Database {
         }
     }
 
+    #[must_use]
     pub fn set_member(
         &mut self,
         user: &String,
@@ -381,6 +394,7 @@ impl Database {
         }
     }
 
+    #[must_use]
     pub fn append(&mut self, user: &String, variable: &String, value: &Value) -> Status {
         match value {
             Value::Immediate(_) | Value::FieldVals(_) => {
@@ -406,6 +420,7 @@ impl Database {
         }
     }
 
+    #[must_use]
     pub fn get(&self, user: &String, variable: &String) -> Result<&Value, Status> {
         if !self.variables.contains_key(variable) {
             Err(FAILED)

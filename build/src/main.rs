@@ -1,19 +1,14 @@
 //This code was modified from code posted by Reddit user u/nsossonko
 //at https://www.reddit.com/r/rust/comments/e82v07/my_introduction_to_tokio_streaming/
 
-use bibifi_runtime::status::Entry;
 use bibifi_runtime::status::Status::EXITING;
 use bibifi_runtime::BiBiFi;
-use futures::future::Either;
-use futures::select;
-use futures::{StreamExt as FStreamExt, TryStreamExt};
+use futures::StreamExt as FStreamExt;
 use regex::Regex;
 use signal_hook::{iterator::Signals, SIGTERM};
 use std::env;
-use std::num::ParseIntError;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
-use tokio::net::{TcpListener, TcpStream};
-use tokio::signal::unix::{signal, SignalKind};
+use tokio::net::TcpListener;
 use tokio::stream::StreamExt as TStreamExt;
 
 #[tokio::main]
@@ -56,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signals = Signals::new(&[SIGTERM])?;
     std::thread::spawn(move || {
         // sighandler
-        for sig in signals.forever() {
+        for _ in signals.forever() {
             std::process::exit(0);
         }
     });
@@ -76,12 +71,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut buf = vec![];
             let mut ast_count = 0u8;
 
-            let res = loop {
+            while ast_count < 3 {
                 match buf_reader.read_until(b'*', &mut buf).await {
                     Ok(n) => {
                         if n == 0 {
                             println!("EOF received");
-                            break None;
+                            return;
                         }
 
                         // Create a String out of the u8 buffer of characters
@@ -90,35 +85,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         } else {
                             ast_count = 0;
                         }
-
-                        if ast_count == 3 {
-                            break Some(());
-                        }
                     }
                     Err(e) => {
                         println!("Error receiving message: {}", e);
-                        break None;
+                        return;
                     }
                 }
-            };
+            }
+
             let buf_string = String::from_utf8_lossy(&buf);
             // Printout the message received
             println!("Received message: {}", buf_string);
 
-            let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel::<Entry>();
+            let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
             let submission = runtime.submit(buf_string.to_string(), sender);
 
-            while let Some(entry) = tokio::stream::StreamExt::next(&mut receiver).await {
-                match buf_writer
-                    .write_all(serde_json::to_string(&entry).unwrap().as_bytes())
-                    .await
-                {
-                    Ok(_) => {
-                        if entry.status == EXITING {
-                            std::process::exit(0)
+            if let Some(entries) = tokio::stream::StreamExt::next(&mut receiver).await {
+                for entry in entries {
+                    match buf_writer
+                        .write_all(serde_json::to_string(&entry).unwrap().as_bytes())
+                        .await
+                    {
+                        Ok(_) => {
+                            if entry.status == EXITING {
+                                std::process::exit(0)
+                            }
                         }
+                        Err(_) => break, // stream closed
                     }
-                    Err(_) => break, // stream closed
                 }
             }
 
