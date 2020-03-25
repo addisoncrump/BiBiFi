@@ -334,7 +334,13 @@ impl Database {
         if !self.variables.contains_key(variable) {
             self.variables.insert(variable.clone(), value.clone());
             for right in &[Right::Read, Right::Write, Right::Append, Right::Delegate] {
-                self.delegate(user, &Target::All, &"admin".to_string(), right, user);
+                self.delegate(
+                    &"admin".to_string(),
+                    &Target::All,
+                    &"admin".to_string(),
+                    right,
+                    user,
+                );
             }
             SUCCESS
         } else if self.check_right(variable, &Right::Write, user) {

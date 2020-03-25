@@ -217,13 +217,18 @@ impl BiBiFi {
                                         output: None,
                                     }
                                 }
+                            } else {
+                                Entry {
+                                    status: Status::FAILED,
+                                    output: None,
+                                }
                             }
                         } else {
                             Entry::from(
                                 database.set_member(
                                     &program.principal.ident.name,
                                     &i1.name,
-                                    &i2.name,
+                                    &i.name,
                                     &s,
                                 ),
                                 Status::SET,
@@ -311,6 +316,10 @@ impl BiBiFi {
                         Err(e) => return e,
                     };
                     locals.insert(i.name.clone(), evaluated);
+                    Entry {
+                        status: Status::LOCAL,
+                        output: None,
+                    }
                 }
             }
             Variable::Member(_, _) => Entry {
