@@ -1,8 +1,8 @@
 use crate::status::{Entry, Status};
-use bibifi_database::{Database, Status as DBStatus, Value};
+use bibifi_database::{Database, Right, Status as DBStatus, Target, Value};
 use bibifi_parser::parse;
-use bibifi_parser::types::Value as ParserValue;
 use bibifi_parser::types::*;
+use bibifi_parser::types::{Right as ParserRight, Target as ParserTarget, Value as ParserValue};
 use std::collections::HashMap;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -335,9 +335,105 @@ impl BiBiFi {
         program: &Program,
         fe: &ForEach,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
+        match &fe.value {
+            Variable::Variable(i) => {
+                if locals.contains_key(&i.name) || database.contains(&i.name) {
+                    Entry {
+                        status: Status::FAILED,
+                        output: None,
+                    }
+                } else {
+                    match &fe.list {
+                        Variable::Variable(listi) => {
+                            let mut locallocals = locals.clone();
+                            let modification = |item: &Value| {
+                                locallocals.insert(i.name.clone(), item.clone());
+                                let res = match BiBiFi::evaluate(
+                                    database,
+                                    &locallocals,
+                                    program,
+                                    &fe.expr,
+                                ) {
+                                    Ok(v) => Ok(v),
+                                    Err(e) => Err(e),
+                                };
+                                res
+                            };
+                            locals.remove(&i.name).unwrap();
+
+                            if let Some(list) = locals.get(&listi.name) {
+                                match list {
+                                    Value::List(list) => {
+                                        let mut modified = list.iter().map(modification);
+                                        if let Some(bad) = modified.find(|item| item.is_err()) {
+                                            match bad {
+                                                Ok(_) => panic!(),
+                                                Err(e) => e,
+                                            }
+                                        } else {
+                                            locals.insert(
+                                                listi.name.clone(),
+                                                Value::List(
+                                                    modified.map(|item| item.unwrap()).collect(),
+                                                ),
+                                            );
+                                            Entry {
+                                                status: Status::FOREACH,
+                                                output: None,
+                                            }
+                                        }
+                                    }
+                                    _ => Entry {
+                                        status: Status::FAILED,
+                                        output: None,
+                                    },
+                                }
+                            } else {
+                                match database.get(&program.principal.ident.name, &listi.name) {
+                                    Ok(list) => match list {
+                                        Value::List(list) => {
+                                            let mut modified = list.iter().map(modification);
+                                            if let Some(bad) = modified.find(|item| item.is_err()) {
+                                                match bad {
+                                                    Ok(_) => panic!(),
+                                                    Err(e) => e,
+                                                }
+                                            } else {
+                                                database.set(
+                                                    &program.principal.ident.name,
+                                                    &listi.name,
+                                                    &Value::List(
+                                                        modified
+                                                            .map(|item| item.unwrap())
+                                                            .collect(),
+                                                    ),
+                                                );
+                                                Entry {
+                                                    status: Status::FOREACH,
+                                                    output: None,
+                                                }
+                                            }
+                                        }
+                                        _ => Entry {
+                                            status: Status::FAILED,
+                                            output: None,
+                                        },
+                                    },
+                                    Err(e) => Entry::from(e, Status::FAILED),
+                                }
+                            }
+                        }
+                        Variable::Member(_, _) => Entry {
+                            status: Status::FAILED,
+                            output: None,
+                        },
+                    }
+                }
+            }
+            Variable::Member(_, _) => Entry {
+                status: Status::FAILED,
+                output: None,
+            },
         }
     }
 
@@ -347,10 +443,24 @@ impl BiBiFi {
         program: &Program,
         d: &Delegation,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
-        }
+        Entry::from(
+            database.delegate(
+                &program.principal.ident.name,
+                &match &d.target {
+                    ParserTarget::All => Target::All,
+                    ParserTarget::Variable(i) => Target::Variable(i.name.clone()),
+                },
+                &d.delegator.ident.name,
+                &match &d.right {
+                    ParserRight::Read => Right::Read,
+                    ParserRight::Write => Right::Write,
+                    ParserRight::Append => Right::Append,
+                    ParserRight::Delegate => Right::Delegate,
+                },
+                &d.delegated.ident.name,
+            ),
+            Status::SET_DELEGATION,
+        )
     }
 
     fn delete_delegation(
@@ -359,10 +469,24 @@ impl BiBiFi {
         program: &Program,
         d: &Delegation,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
-        }
+        Entry::from(
+            database.undelegate(
+                &program.principal.ident.name,
+                &match &d.target {
+                    ParserTarget::All => Target::All,
+                    ParserTarget::Variable(i) => Target::Variable(i.name.clone()),
+                },
+                &d.delegator.ident.name,
+                &match &d.right {
+                    ParserRight::Read => Right::Read,
+                    ParserRight::Write => Right::Write,
+                    ParserRight::Append => Right::Append,
+                    ParserRight::Delegate => Right::Delegate,
+                },
+                &d.delegated.ident.name,
+            ),
+            Status::DELETE_DELEGATION,
+        )
     }
 
     fn default_delegator(
@@ -371,10 +495,10 @@ impl BiBiFi {
         program: &Program,
         p: &Principal,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
-        }
+        Entry::from(
+            database.set_default_delegator(&program.principal.ident.name, &p.ident.name),
+            Status::DEFAULT_DELEGATOR,
+        )
     }
 
     fn evaluate(
