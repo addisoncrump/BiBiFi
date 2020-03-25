@@ -335,9 +335,105 @@ impl BiBiFi {
         program: &Program,
         fe: &ForEach,
     ) -> Entry {
-        Entry {
-            status: Status::FAILED,
-            output: None,
+        match &fe.value {
+            Variable::Variable(i) => {
+                if locals.contains_key(&i.name) || database.contains(&i.name) {
+                    Entry {
+                        status: Status::FAILED,
+                        output: None,
+                    }
+                } else {
+                    match &fe.list {
+                        Variable::Variable(listi) => {
+                            let mut locallocals = locals.clone();
+                            let modification = |item: &Value| {
+                                locallocals.insert(i.name.clone(), item.clone());
+                                let res = match BiBiFi::evaluate(
+                                    database,
+                                    &locallocals,
+                                    program,
+                                    &fe.expr,
+                                ) {
+                                    Ok(v) => Ok(v),
+                                    Err(e) => Err(e),
+                                };
+                                res
+                            };
+                            locals.remove(&i.name).unwrap();
+
+                            if let Some(list) = locals.get(&listi.name) {
+                                match list {
+                                    Value::List(list) => {
+                                        let mut modified = list.iter().map(modification);
+                                        if let Some(bad) = modified.find(|item| item.is_err()) {
+                                            match bad {
+                                                Ok(_) => panic!(),
+                                                Err(e) => e,
+                                            }
+                                        } else {
+                                            locals.insert(
+                                                listi.name.clone(),
+                                                Value::List(
+                                                    modified.map(|item| item.unwrap()).collect(),
+                                                ),
+                                            );
+                                            Entry {
+                                                status: Status::FOREACH,
+                                                output: None,
+                                            }
+                                        }
+                                    }
+                                    _ => Entry {
+                                        status: Status::FAILED,
+                                        output: None,
+                                    },
+                                }
+                            } else {
+                                match database.get(&program.principal.ident.name, &listi.name) {
+                                    Ok(list) => match list {
+                                        Value::List(list) => {
+                                            let mut modified = list.iter().map(modification);
+                                            if let Some(bad) = modified.find(|item| item.is_err()) {
+                                                match bad {
+                                                    Ok(_) => panic!(),
+                                                    Err(e) => e,
+                                                }
+                                            } else {
+                                                database.set(
+                                                    &program.principal.ident.name,
+                                                    &listi.name,
+                                                    &Value::List(
+                                                        modified
+                                                            .map(|item| item.unwrap())
+                                                            .collect(),
+                                                    ),
+                                                );
+                                                Entry {
+                                                    status: Status::FOREACH,
+                                                    output: None,
+                                                }
+                                            }
+                                        }
+                                        _ => Entry {
+                                            status: Status::FAILED,
+                                            output: None,
+                                        },
+                                    },
+                                    Err(e) => Entry::from(e, Status::FAILED),
+                                }
+                            }
+                        }
+                        Variable::Member(_, _) => Entry {
+                            status: Status::FAILED,
+                            output: None,
+                        },
+                    }
+                }
+            }
+            Variable::Member(_, _) => Entry {
+                status: Status::FAILED,
+                output: None,
+            },
         }
     }
 
