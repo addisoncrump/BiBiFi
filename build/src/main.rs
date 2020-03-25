@@ -1,8 +1,9 @@
+#[forbid(unused_must_use)]
 //This code was modified from code posted by Reddit user u/nsossonko
 //at https://www.reddit.com/r/rust/comments/e82v07/my_introduction_to_tokio_streaming/
-
 use bibifi_runtime::status::Status::EXITING;
 use bibifi_runtime::BiBiFi;
+use futures::io::Error;
 use futures::{FutureExt, StreamExt as FStreamExt, TryFutureExt};
 use regex::Regex;
 use signal_hook::{iterator::Signals, SIGTERM};
@@ -114,13 +115,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if entry.status == EXITING {
                                 std::process::exit(0)
                             }
-                            println!("{}", serde_json::to_string(&entry).unwrap());
-                            buf_writer.flush().await;
                         }
                         Err(_) => break, // stream closed
                     }
                 }
             }
+            buf_writer.flush().await.unwrap_or(()); // cheaty hack
             drop(buf_reader);
             drop(buf_writer);
         });
