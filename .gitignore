@@ -7,3 +7,6 @@ target/
 *_temp*
 my_*
 
+break/*/*
+!break/*/inspections
+!break/*/violations
