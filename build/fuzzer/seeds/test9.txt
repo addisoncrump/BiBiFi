@@ -1,0 +1,16 @@
+as principal admin password "admin" do
+	set records = []
+	append to records with { dude="yes" }
+	append to records with "no"
+	set var = "a variable"
+	return var
+***
+
+as principal admin password "admin" do
+	append to records with var
+	return records
+***
+
+as principal admin password "admin" do
+	return newvar
+***

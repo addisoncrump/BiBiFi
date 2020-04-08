@@ -45,13 +45,21 @@ while true; do
     sleep 30
   elif [ "$o_resp_c" != "$dut_resp_c" ] 
   then
-    ((mm_cnt=mm_cnt+1))
-    cp input.txt ./mismatches/mm-${fuzz_start_time}--${mm_cnt}--${mm_time}.txt
-    STR="${mm_cnt}: ${mm_time} *** Mismatch: 
-    $o_resp_c
-    !=
-    $dut_resp_c"
-    echo "$STR" >> log/${fuzz_start_time}.log
+    if ( [ "$o_resp_c" == '{"status":"FAILED"}' ] & [ "$dut_resp_c" == '{"status":"DENIED"}' ] ) & [ 1 -eq 0 ]
+    then
+      #ignore mm
+      echo "ignore mismatch"
+      temp=1
+    else
+      echo "don't ingore mismatch"
+      ((mm_cnt=mm_cnt+1))
+      cp input.txt ./mismatches/mm-${fuzz_start_time}--${mm_cnt}--${mm_time}.txt
+      STR="${mm_cnt}: ${mm_time} *** Mismatch: 
+      $o_resp_c
+      !=
+      $dut_resp_c"
+      echo "$STR" >> log/${fuzz_start_time}.log
+    fi
   elif [ "$o_resp_c" == "$dut_resp_c" ] 
   then
     #STR="Match: 

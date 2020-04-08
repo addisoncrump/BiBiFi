@@ -1,0 +1,10 @@
+ as principal admin password "admin" do
+	 set records = []
+	 append to records with { name = "mike", date = "1-1-90" }
+	 append to records with { name = "dave", date = "1-1-85" }
+	 append to records with { date = "1-1-85" }
+	 foreach rec in records replacewith rec.date
+	 foreach rec in records replacewith { a="hum",b=rec }
+	 set rec = ""
+	 return records
+***

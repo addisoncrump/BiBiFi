@@ -1,0 +1,4 @@
+as principal bob password "B0BPWxxd" do
+   set x = "another string"
+   return x
+***
