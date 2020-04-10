@@ -1,0 +1,12 @@
+{
+    "type": "security",
+    "target_team": "Javascript-is-not-THAT-bad",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password\"\n   set msg = \"Hi Alice. Good luck in Build-it, Break-it, Fix-it!\"\n   set delegation msg admin read -> alice\n   return \"sg admin read -> alice\n   return \"success\"\n\n***\n   return msg\nas principal alice password \"alices_password\" do\n***", "base64": false}
+    ]
+}
+

@@ -1,0 +1,11 @@
+{
+    "type": "security",
+    "target_team": "Javascript-is-not-THAT-bad",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal alice password \"alices_passwore\" do\n*+*   return msg\n*+*   return msg\n*+*   return msg\n***", "base64": false}
+    ]
+}

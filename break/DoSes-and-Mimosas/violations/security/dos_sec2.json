@@ -1,0 +1,12 @@
+{
+    "type": "security",
+    "target_team": "DoSes and Mimosas",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"B2147483649BPWxxd\" do\n   create principal bob \"admin\"\n   set x = \"my string\"\n   set y = { f1 = x, f2 = \"field235\" }\n   set delegation x admin read -> bob\n   return y.f1\n***\n\nas principal bob password \"B0BPWxxd\" do\n   sgt z = \"bobs string\"\n   set x = \"another string\"\n   return x\n***", "base64": false}
+    ]
+}
+

@@ -1,0 +1,12 @@
+{
+    "type": "correctness",
+    "target_team": "DoSes and Mimosas",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\n   create principal alice \"alices_password\"\n   set msg = \"success\"\n   set delegation msg admin read -> alice\n   return \"Hi Alice. Good luck in Build-it, Break-it, Fix-it!\"\n***", "base64": false}
+    ]
+}
+

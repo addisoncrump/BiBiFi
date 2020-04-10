@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "Javascript-is-not-THAT-bad",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\n   set records = []\n   append to records with { name = \"mike\", date = \"1-1-90\" } \n   append to records with { name = \"dave\", date = \"1-1-85\" }\n   append to records with { name = \"dave\", date = \"1-1-85\" }\n   append to records with { e = \"dave\", date = \"1-1-85\" }\n   append to records with { name = \"dave\", date = \"1-1-85\" }\n   append to records with { name = \"dave\", date = \"1-1-85\" }\n   local names = records\n   foreach rec in names replacewith rec.name\n   return names\n***", "base64": false}
+    ]
+}
