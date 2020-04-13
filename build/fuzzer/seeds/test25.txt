@@ -1,0 +1,4 @@
+as principal bob password "bob_pass" do
+	set my_var = y
+	return "done"
+***
