@@ -1,0 +1,12 @@
+{
+  "type": "security",
+  "target_team": "Code Minters",
+  "arguments": {
+    "argv": ["%PORT%"],
+    "base64": false
+  },
+  "programs": [
+  {"program": "as principal admin password \"admin\" do\n create principal alice \"alicepwxxd\"\n  set x = {a=\"a\", b=\"b\"}\n default delegator = alice \n    set delegation x admin read -> alice \n  create principal bob \"b0bpwxxd\"\n return \"done\"\n***\n"},
+  {"program": "as principal bob password \"b0bpwxxd\" do\n return x.b\n***\n"}
+  ]
+}
