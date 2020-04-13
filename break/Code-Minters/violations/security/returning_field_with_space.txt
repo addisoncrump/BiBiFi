@@ -1,0 +1,3 @@
+According to the "Expressions and variables" section in spec, if in the expression "x.y", if the current principal does not have read access to "x", then it is a security violation.
+
+Hence, the current test case, where admin creates a principal "bob" and also a variable "x". Then "bob" as current principal tries to return a field "b" in "x", this should result in "DENIED" but the server is returning "FAILED". This is hence a security violation according to the break it spec.
