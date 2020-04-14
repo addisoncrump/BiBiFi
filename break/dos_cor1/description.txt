@@ -1,0 +1,4 @@
+According to spec, create prinicipal should fail only if :
+       - Fails if p already exists as a
+        - principal.Security violation if the current principal is not admin.
+Since both of these are false, the dut should not return failed.

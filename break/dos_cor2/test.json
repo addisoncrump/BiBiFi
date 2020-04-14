@@ -1,0 +1,18 @@
+{
+    "type": "correctness",
+    "target_team": "DoSes-and-Mimosas",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal alice password \"alices_password\" do\n   return msg\n***", "base64": false}
+    ]
+}
+
+
+
+
+
+
+

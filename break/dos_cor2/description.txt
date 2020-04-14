@@ -1,0 +1,4 @@
+According to the spec, the return command executes the expression and 
+outputs status code RETURNING and the JSON representation of the result 
+for the key "output". While the oracle correctly outputs the JSON result
+the dut does not.
