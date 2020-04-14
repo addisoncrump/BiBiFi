@@ -1,0 +1,4 @@
+According to the "default delegator" section in spec, when a new principal is created, "all" is delegated from the default principal to the new principal. And, according to section "set delegation", all as target should only delegate those variables over which the delegator has "delegate" permissions.
+
+In the current test case, the current default delegator alice only has read permission over "x" and hence when bob was created, bob should not get any permissions from alice for "x" since alice does not have delegate permission over "x".
+But later in the test, when bob as the current principal tries to return "x", the program successfully returns the value of "x" instead of returning "DENIED". This is hence a security violation according to the break it spec.
