@@ -1,6 +1,6 @@
 {
 "type": "security",
-"target_team": "Code Minters",
+"target_team": "Code-Minters",
 "arguments": {
 "argv": ["%PORT%"],
 "base64": false
