@@ -1,0 +1,1 @@
+According to the specification, the keywords used for additional features like "split" should also be excluded from allowed variable names, but in the test case where "split" keyword is used as the principal name, the program runs without throwing error
