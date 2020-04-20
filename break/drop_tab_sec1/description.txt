@@ -1,0 +1,3 @@
+According to the "ddelete delegatation" section in the spec, in a command "delete delegation <tgt> q <right> -> p", if the current principal is p, then p need not have delegate permission over <tgt>. 
+
+But in the test case, when bob tries to delete delegation to a variable "x" that was assigned to him by admin, then the server is returning DENIED where as the oracle runs without throwing any error. Hence this is a security violation.
