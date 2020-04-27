@@ -1,0 +1,12 @@
+{
+	"type":"correctness",
+	"target_team": "Javascript-is-not-THAT-bad",
+	"arguments": {
+		"argv":["%PORT%"],
+		"base64":false
+	},
+	"programs": [
+		{"program": "as principal admin password \"admin\" do\nset x = \"2\"\nexit\n***", "base64": false},
+		{"program": "as principal admin password \"admin\" do\nreturn x\n***", "base64": false}
+	]
+}

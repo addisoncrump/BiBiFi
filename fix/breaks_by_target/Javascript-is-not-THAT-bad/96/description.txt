@@ -1,0 +1,1 @@
+According to the spec, a failure should happens when the program is malformed in some way. In this case, the only status code sent back to the client is FAILED.

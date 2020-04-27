@@ -1,0 +1,3 @@
+Team = Javascript is not THAT bad
+Type = Correctness
+Incorrect exit code returned. Should be 0 or 255

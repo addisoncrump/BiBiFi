@@ -1,0 +1,5 @@
+This test makes a record similar to tests/test2.json. It then tests whether a deep copy of the record was made.
+According to the rules for set, this test should work.
+Specifically, when setting a variable equal to another, a deep copy should take place.
+However, Code Minters failed this test because a shallow copy was made. This is a correctness violation.
+Source: Set portion of Build-It spec.

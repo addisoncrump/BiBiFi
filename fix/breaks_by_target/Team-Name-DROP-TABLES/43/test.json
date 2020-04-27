@@ -1,0 +1,12 @@
+{
+    "type": "security",
+    "target_team": "Team-Name-DROP-TABLES",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\ncreate principal bob \"password\"\ncreate principal alice \"password\"\ncreate principal eve \"password\"\nset x = \"my string\"\nset delegation x admin read -> bob\nset delegation x bob read -> alice\nreturn x\n***\n", "base64": false},
+        {"program": "as principal alice password \"password\" do\ndelete delegation x bob read -> alice\nreturn \"exiting\"\n***\n", "base64": false}
+    ]
+}

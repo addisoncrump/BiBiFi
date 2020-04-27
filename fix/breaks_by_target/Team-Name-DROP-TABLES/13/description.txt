@@ -1,0 +1,7 @@
+This test explores the capabilities of the principal 'anyone' by trying to login, change his password, and make a variable.
+This test also uses the logic of default delegator by creating a principal and attempting to access a variable.
+Since 'anyone' is the default delegator, any principal created after 'anyone' has any permission on a variable should have the same access to that variable.
+However, Team Name DROP TABLES flagged a security violation (DENIED) when it shouldn't.
+This occurs when a principal tries to read a variable that 'anyone' created. Also, there is a false security violation when attempting to access 'anyone' initially; however, this output is ambiguous.
+This is a availability security violation.
+Source: Primitive commands - Default Delegator from the spec.

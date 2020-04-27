@@ -1,0 +1,5 @@
+According to the spec...
+
+'Notice that there are spaces between words'
+
+This test shows that the target system does not check the whitespace between the key words of a command.

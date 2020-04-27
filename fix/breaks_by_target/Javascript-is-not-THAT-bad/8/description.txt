@@ -1,0 +1,5 @@
+This test attempts to set the admin's password to a string that is 65,536 characters long.
+Per the limitations on string constants given in the grammar, this test should work.
+However, Javascript is not THAT bad failed this test by not exiting with an exit code of 255. Their program had to be closed by the grading script.
+This is a correctness violation.
+Source: Grammar portion of Build-It spec.

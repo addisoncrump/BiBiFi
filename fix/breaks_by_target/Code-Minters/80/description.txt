@@ -1,0 +1,5 @@
+
++ From Spec
+    - "If the command is return <expr> then the server executes the expression and outputs status code RETURNING and the JSON representation of the result for the key "output"; the output format is given at the end of this document."
+    - "<expr> ::=  <value> | [] | { <fieldvals> }"
+    - "<value> ::=  x | x . y | s" -> s is string

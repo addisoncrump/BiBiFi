@@ -1,0 +1,13 @@
+{
+    "type": "correctness",
+    "target_team": "Javascript-is-not-THAT-bad",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\ncreate principal bob \"password\"\ncreate principal alice \"password\"\nset y = \"my string\"\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal bob password \"password\" do\nset x = []\nreturn x\n***\n", "base64": false},
+        {"program": "as principal bob password \"password\" do\nset delegation x bob read -> alice\nexit\n***\n", "base64": false}
+    ]
+}

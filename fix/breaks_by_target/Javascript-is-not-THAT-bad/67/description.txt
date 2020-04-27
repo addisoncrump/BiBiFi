@@ -1,0 +1,4 @@
+
++ From Spec
+    - "When <tgt> is a variable x, indicates that q revokes a delegation assertion of <right> to p on x."
+    - "If <tgt> is the keyword all then q revokes delegation of <right> to p for all variables on which q has delegate permission."

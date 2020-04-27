@@ -1,0 +1,5 @@
+This test first creates a principal alice, then admin delegates read access on a variable x to alice. In a second program, alice attempts to delete read access on x from admin. This should 
+result in a DENIED status, since other users should not be able to delete delegation on admin. (According to the spec, any non-admin principal can deny himself rights, which implies
+that admin is unable to deny himself rights, and by extension, other principals should not be able to deny admin rights.) https://tamu.blackboard.com/bbcswebdav/pid-6568814-dt-content-rid-58959734_1/courses/CSCE.489.2011.M1/bibifi_project/build.html#h.pawfvhuor951
+The Lads fail this test since they return status FAILED, rather than DENIED as the oracle does.
+This is a availability security violation.

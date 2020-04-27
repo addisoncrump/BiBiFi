@@ -1,0 +1,12 @@
+{
+	"type":"correctness",
+	"target_team": "The-Lads",
+	"arguments": {
+		"argv":["0x189C"],
+		"base64":false
+	},
+	"programs": [
+		{"program": [], "base64": false}
+	]
+}
+

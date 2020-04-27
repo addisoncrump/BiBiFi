@@ -1,0 +1,9 @@
+This is a security failure because the target system allows invalid strings as passwords. According to the break-it spec, a security violation can be found as follows...
+
+'The target's status is DENIED, but the oracle's status isn't DENIED (availability security violation)'
+
+Clearly shown by the testcase, the target say's denied because the user exists but the password is wrong. The oracle does not say denied, but rather 'failed' because the user was never created.
+
+This testcase could also do the reverse, and have the oracle say 'denied' while the target system allows things. This could happen when running a program that changes a password and also 'should' fail for the above constraint.
+The target program would succeed in changing the password (even though it should fail the whole program and roll things back), while the oracle would never change the password.
+Logging in on the final program with the updated password would then show denied on the oracle, but allow the user in on the target.

@@ -1,0 +1,7 @@
+This test explores the capabilities of the principal 'anyone' by trying to login, change his password, and make a variable.
+This test also uses the logic of default delegator by creating a principal and attempting to access a variable.
+Since 'anyone' should be a pre-configured principal according to the spec, the admin should be able to change his password.
+However, The Lads is unable to change the password of 'anyone' (FAILED) when it should be able to.
+This occurs when trying to set the password of 'anyone'. Also, there is a false security violation when trying to access 'anyone' initially; however, this output is ambiguous.
+This is a correctness violation.
+Source: Primitive commands - Create Principal from the spec.

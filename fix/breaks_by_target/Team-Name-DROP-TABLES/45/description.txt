@@ -1,0 +1,1 @@
+Should be able to return twice.  When returning twice it fails

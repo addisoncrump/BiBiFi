@@ -1,0 +1,23 @@
+{
+    "type": "security",
+    "target_team": "Code-Minters",
+    "arguments": { "argv": ["%PORT%"] },
+    "programs": [
+        {
+            "output": [{"status":"SET"},{"status":"SET_DELEGATION"},{"output":"hello","status":"RETURNING"}],
+            "program": "as principal admin password \"admin\" do\nset x = \"hello\"\nset delegation x admin read -> anyone\nreturn x\n***\n"
+        },
+        {
+            "output": [{"status":"CREATE_PRINCIPAL"},{"status":"CREATE_PRINCIPAL"},{"output":"hello","status":"RETURNING"}],
+            "program": "as principal admin password \"admin\" do\ncreate principal bob \"b\"\ncreate principal alice \"b\"\nreturn x\n***\n"
+        },
+        {
+            "output": [{"status":"SET"},{"status":"DELETE_DELEGATION"},{"output":"hello","status":"RETURNING"}],
+            "program": "as principal admin password \"admin\" do\nset x = \"hello\"\ndelete delegation x admin read -> anyone\nreturn x\n***\n"
+        },
+	{
+            "output": [{"status":"DENIED"}],
+            "program": "as principal bob password \"b\" do\nreturn x\n***\n"
+        }
+    ]
+}

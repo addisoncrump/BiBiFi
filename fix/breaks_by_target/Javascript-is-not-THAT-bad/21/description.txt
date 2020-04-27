@@ -1,0 +1,3 @@
+Team = Javascript is not THAT bad
+Type = Crash
+Unexpected crash to exponential expansion of a variable on append (bound checking)

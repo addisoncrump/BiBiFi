@@ -1,0 +1,1 @@
+According to the specification, there can be a space between the object and its field in "x.y" type variable value, but in the test case where there is a space between "x" and "a" in the return command, the program throws "FAILED" where as the oracle runs without throwing any error

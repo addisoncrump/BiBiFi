@@ -1,0 +1,11 @@
+{
+  "type": "correctness",
+  "target_team": "Team-Name-DROP-TABLES",
+  "arguments": {
+    "argv": ["%PORT%"],
+    "base64": false
+  },
+  "programs": [
+    {"program": "as principal admin password \"admin\" do\n  set x = {a = \"a\", b = \"b\"}\n   return x . a \n***\n"}
+  ]
+}

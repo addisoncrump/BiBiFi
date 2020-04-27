@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "Team-Name-DROP-TABLES",
+    "arguments": { "argv": ["%PORT%"] },
+    "programs": [
+        {
+            "output": [{ "status": "FAILED" }],
+            "program": "as principal admin password \"admin\" do\ncreateprincipal bob \"bob\"\nreturn []\n***\n"
+        }
+    ]
+}

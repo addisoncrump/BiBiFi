@@ -1,0 +1,3 @@
+
++ From Spec
+    - "The system is preconfigured with principal admin whose password is given by the second command-line argument; or "admin" if that password is not given. There is also a preconfigured principal anyone whose initial password is unspecified, and which has no inherent authority."

@@ -1,0 +1,13 @@
+{
+    "type": "security",
+    "target_team": "The-Lads",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    }, 
+    "programs": [
+        {"output": [{"status": "CREATE_PRINCIPAL"}, {"status": "SET"}, {"status": "SET_DELEGATION"}, {"status": "RETURNING", "output":"x"}], "program": "as principal admin password \"admin\" do\n create principal alice \"alice\" \n  set x = \"x\"\n set delegation x admin read -> alice\nreturn x\n ***\n"},
+        {"output": [{"status": "DENIED"}], "program": "as principal alice password \"alice\" do\n delete delegation x alice read -> admin\n return x\n ***\n"},
+        {"output": [{"status": "RETURNING", "output":"x"}], "program": "as principal admin password \"admin\" do\n return x\n ***\n"}                                              
+    ]
+}

@@ -1,0 +1,7 @@
+This test explores the capabilities of the principal 'anyone' by trying to login, change his password, and make a variable.
+This test also uses the logic of default delegator by creating a principal and attempting to access a variable.
+Since 'anyone' should be a pre-configured principal according to the spec, 'anyone' should be able to login once his password has been changed by the admin.
+However, Javascript is not THAT bad returns nothing when it should return something.
+This occurs when trying to login as 'anyone'. Also, there is a false security violation when trying to access 'anyone' initially; however, this output is ambiguous.
+This is a correctness violation.
+Source: Primitive commands - Create Principal from the spec.

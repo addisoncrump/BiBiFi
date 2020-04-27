@@ -1,0 +1,4 @@
+This test creates a principal with a password that is only spaces. This should work, since the spec specifies in the grammar that passwords are strings, 
+and string match the regex [A-Za-z0-9_ ,;\.?!-]*. The Code-Minters failed this test because although the oracle returned an output within a few seconds, the Code-Minters' 
+server hangs for at least a minute. This is an availability security violation. 
+(https://tamu.blackboard.com/bbcswebdav/pid-6568814-dt-content-rid-58959734_1/courses/CSCE.489.2011.M1/bibifi_project/build.html#h.p5blxbo8gc5j)

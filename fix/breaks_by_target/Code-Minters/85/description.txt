@@ -1,0 +1,3 @@
+According to the grammar rules from "Grammar" section of spec, the first line of program should be the "as principal ..." command.
+
+Hence, the current test case that has the "exit" command directly without the "as principal ..." command should be a parsing error resulting in "FAILED" where as the server is returning "DENIED". This is hence a security violation according to the break it spec.

@@ -1,0 +1,12 @@
+{
+    "type": "correctness",
+    "target_team": "Javascript-is-not-THAT-bad",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    }, 
+    "programs": [
+        {"output": [{"status": "CREATE_PRINCIPAL"},{"status": "SET"},{"status": "RETURNING", "output":"x"}], "program": "as principal admin password \"admin\" do\n create principal alice \"       \" \n set x = \"x\"\n return x\n ***\n"},
+        {"output": [{"status": "RETURNING", "output":"hello world"}], "program": "as principal alice password \"       \" do\n return \"hello world\"\n ***\n"}
+    ]
+}
