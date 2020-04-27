@@ -1,0 +1,9 @@
+target/
+.idea/
+/build/server
+
+*.sw*
+*_save*
+*_temp*
+my_*
+
