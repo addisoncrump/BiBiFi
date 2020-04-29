@@ -191,7 +191,7 @@ impl Database {
             if self.principals.contains_key(delegator) {
                 if let Some(pdelegated) = self.principals.get(delegated).cloned() {
                     match pdelegated {
-                        VPrincipal::Admin(_) => {}
+                        VPrincipal::Admin(_) => {return DENIED;} //break 10 solution
                         VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => {
                             let mut p = p.clone();
                             let delegations = if let Target::Variable(variable) = target {
@@ -242,7 +242,7 @@ impl Database {
                 }
             }
         }
-        FAILED
+        FAILED //Break 10 originally went here
     }
 
     #[must_use]
