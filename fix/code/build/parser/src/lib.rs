@@ -57,7 +57,7 @@ peg::parser! {
 
         rule expr() -> Expr
             = !keyword() v:value() { Expr::Value(v) }
-            / "[" _ "]" { Expr::EmptyList }
+            / "[]" { Expr::EmptyList } //Fix for Break 33 and 66
             / "{" a:( _ () a:root_value_assignment() _ {a}) ** "," _ "}" { Expr::FieldVals(a) }
 
         rule primitive_command() -> PrimitiveCommand
