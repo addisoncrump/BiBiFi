@@ -1,0 +1,3 @@
+Issue: If a unprividged user attempts to undelegate permissions from the admin, the server does not know how to handle it. It does not pass the validation checks which is where it checks if the user has permissions. So it gets caught by the general fail-safe Failed status on line 248 of database/src/lib.rs.
+
+Solution: Add a case to the case statement that returns a denied if it attempts to change the admin permissions. 

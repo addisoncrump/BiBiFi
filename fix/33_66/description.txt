@@ -1,0 +1,3 @@
+Issue: The server allowed spaces in empty lists.
+
+Solution: Modifed parser/src/lib.rs to prevent spaces in empty lists.

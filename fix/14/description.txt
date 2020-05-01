@@ -1,0 +1,3 @@
+Issue: The user "anyone" is a preconfigured user that, by default, does not have a password. The designers of the server did not relize that the user anyone should have a password and thus failed to include that functionality. Considering its usecase it seems completely illogical for "anyone" to need a password and is probably an issue with the spec itself.
+
+Solution: Added a password field where the user "anyone" is defined in line 18 of database/src/lib.rs. Changed all use of the "anyone" user to include the extra parameter for the hashed password. When the database is created and the "anyone" user is preconfigured, we added a blank hash as input for the password.
