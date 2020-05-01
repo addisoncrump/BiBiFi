@@ -1,0 +1,5 @@
+According to the spec...
+
+Keywords for optional features (whether or not you implement those features) should also be excluded; these include split, concat, tolower, notequal, equal, filtereach, with, let.
+
+This test shows that the target system allows the optional feature keywords as identifiers.

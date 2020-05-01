@@ -1,0 +1,3 @@
+Facts from spec: (1)From "create principal" section, "anyone" is a pre-configured principal whose initial password is unspecified. (2)From the "Programs" section, for the "as principal" command, if the password is incorrect, then it is a security violation.
+
+Hence, when trying to login as "anyone" with a password "anyone", the oracle returns "DENIED" since the password is not correct, where as the server returns "FAILED". This is hence a security violation according to the break it spec.

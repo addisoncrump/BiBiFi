@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "Code-Minters",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program":"as principal admin password \"admin\" do\nset y = \"bob\"\nset delegation y admin read -> anyone\nreturn y\n***\n", "base64": false}
+    ]
+}

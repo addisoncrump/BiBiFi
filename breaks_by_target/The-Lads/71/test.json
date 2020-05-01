@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "The-Lads",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program":"as principal admin password \"admin\" do\ncreate principal bob \"B0BPWxxd\"\nset concat = \"my string\"\nreturn concat\n***\n", "base64": false}
+    ]
+}

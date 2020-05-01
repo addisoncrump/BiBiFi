@@ -1,0 +1,1 @@
+According to the specification, new line characters should not be allowed in between the program, but in the current test case where there is an additional newline character after the first command, the program runs normally without throwing "FAILED" error

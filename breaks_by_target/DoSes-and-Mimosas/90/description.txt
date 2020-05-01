@@ -1,0 +1,1 @@
+If given an input with an invalid password, the oracle will return deny while the server will return failed. According to the spec, this is a "Security violation if the current principal is neither admin nor p itself" and should return denied.

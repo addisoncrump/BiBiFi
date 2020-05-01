@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "Code-Minters",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\nset records = []\nappend to records with \"one\"\nappend to records with \"two\"\nappend to records with \"three\"\nreturn records\nset q = \"hello\"\nforeach node in records replacewith q\nreturn records\n***", "base64": false}
+    ]
+}

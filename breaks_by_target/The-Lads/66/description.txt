@@ -1,0 +1,6 @@
+This is a security failure because the target system allows whitespace between brackets for a new list. According to the break-it spec, a security violation can be found as follows...
+
+'the oracle issues status DENIED but the target doesn't (integrity or privacy security violation)'
+
+Clearly shown by the testcase, the oracle say's denied because the change password failed (caught whitespace between brakcets, thus password never changed). 
+The target does not say denied because the change password succeeded (didn't check for whitespace between brackets, thus succeeded in password change).

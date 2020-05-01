@@ -1,0 +1,14 @@
+{
+    "type": "security",
+    "target_team": "Code-Minters",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\ncreate principal bob \"password\"\ncreate principal alice \"password\"\ncreate principal eve \"password\"\nset x = \"my string\"\nset delegation x admin delegate -> alice\nreturn x\n***\n", "base64": false},
+        {"program": "as principal alice password \"password\" do\nreturn x\n***\n", "base64": false},
+        {"program": "as principal alice password \"password\" do\nset delegation x alice read -> bob\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal alice password \"password\" do\ndelete delegation x alice write -> bob\nreturn \"exiting\"\n***\n", "base64": false}
+    ]
+}

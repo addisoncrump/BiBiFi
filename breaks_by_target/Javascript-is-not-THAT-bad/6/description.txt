@@ -1,0 +1,7 @@
+This test finds what happens when a user attempts to delete delegations given to him by the admin.
+According to "maintaining the security state" in the spec, this action should do nothing.
+Since the admin didn't delete the delegation, it should still exist.
+However, Javascript is not THAT bad returns a security violation (DENIED) when it shouldn't. 
+Specifically, when a principal tries to give himself delegate permission (when admin has already given him it), and the principal tried to delete his own delegation, the principal should be able to do this.
+This is a availability security violation.
+Source: Enforcing Command Permissions in the Build-It spec.

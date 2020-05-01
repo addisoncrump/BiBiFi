@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "Javascript-is-not-THAT-bad",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program":"as principal admin password \"admin\" do\n   //This is a comment by itself\nset x = \"my string\"\nreturn x\n***\n", "base64": false}
+    ]
+}

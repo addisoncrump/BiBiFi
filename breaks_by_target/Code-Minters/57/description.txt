@@ -1,0 +1,5 @@
+This is a security failure because the target system allows programs longer than 1,000,000 ASCII(8-byte characters). According to the break-it spec, a security violation can be found as follows...
+
+'the target's status is DENIED, but the oracle's status isn't DENIED (availability security violation)'
+
+Clearly shown by the testcase, the oracle outputs FAILED for the third program because the second program exceeded the maximum program size, and variable 'y' was never created unlike for the target case where 'y' was created which leads to an incorrect DENIED status. 

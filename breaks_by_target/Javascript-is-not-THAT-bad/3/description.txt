@@ -1,0 +1,7 @@
+This test finds what happens when a user attempts to delete a delegation both they and the admin had given to another principal.
+According to "maintaining the security state" in the spec, this action should be valid, but the other principal should still have a valid permission delegation from the admin.
+Since the admin didn't delete the 'delegate' permission, it should still exist.
+However, Javascript is not THAT bad does not output anything for the last program (it didn't return within 30 seconds).
+After adjusting delegation rules, a principal, who has delegation permission from the admin, attempts to set a permission on another principal.
+This is a availability security violation.
+Source: Enforcing Command Permissions in the Build-It spec.

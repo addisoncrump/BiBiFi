@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "Team-Name-DROP-TABLES",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\ncreate principal bob \"password\"\nset x = \"my string\"\nset delegation all admin read -> bob\nreturn x\n***\n", "base64": false}
+    ]
+}

@@ -1,0 +1,11 @@
+{
+    "type": "correctness",
+    "target_team": "Code-Minters",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program":"as principal admin password \"admin\" do\nset x = \"my string\"\nreturn \"my string\"\n***\n", "base64": false}
+    ]
+}

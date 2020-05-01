@@ -1,0 +1,1 @@
+Any non-principal should be able to deny himself rights, but this denies Bob the ability to delete his delegation rights.

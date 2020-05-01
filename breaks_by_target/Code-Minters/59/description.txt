@@ -1,0 +1,7 @@
+This is a security failure because the target system does not allow delegation of rights to predefined principal anyone. According to the break-it spec, a security violation can be found as follows...
+
+'the oracle issues status DENIED but the target doesn't (integrity or privacy security violation)'
+
+The testcase shows that target say's failed to the first program because they fail to include principal anyone in their list of principals. therefore the delegation fails and triggers
+a chain of fails in all programs. The oracle does not say failed, but rather 'denied' because none of the programs had an error and read rights were
+succesfully deleted for anyone in the second to last program therefore no one but admin should be allowed to read the contents of x.

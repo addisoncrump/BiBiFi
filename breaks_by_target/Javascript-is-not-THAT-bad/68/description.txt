@@ -1,0 +1,3 @@
+
++ From Spec
+    - "It is also permitted for a comment to be on a line by itself, as long the line begins with // without any preceding whitespace."

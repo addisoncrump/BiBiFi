@@ -1,0 +1,19 @@
+{
+    "type": "security",
+    "target_team": "The-Lads",
+    "arguments": { "argv": ["%PORT%"] },
+    "programs": [
+        {
+            "output": [{ "status": "CREATE_PRINCIPAL" }, { "status": "RETURNING", "output": [] }],
+            "program": "as principal admin password \"admin\" do\ncreate principal bob \"bob\"\nreturn []\n***\n"
+        },
+        {
+            "output": [{ "status": "FAILED" }],
+            "program": "as principal admin password \"admin\" do\nchange password bob \"notbob\"\nset x = [ ]\nreturn []\n***\n"
+        },
+        {
+            "output": [{ "status": "DENIED" }],
+            "program": "as principal bob password \"notbob\" do\nreturn []\n***\n"
+        }
+    ]
+}

@@ -1,0 +1,7 @@
++ So basically, "j" isn't supposed to read x since they are delegated that from "bob" - the default delegator, which has had their own read delegation deleted.
++ One observation I had is that this bug only occurs if "bob" is the default delegator, and not when "j" explicitly is set a read delegation from "bob".
++ 3 Rules of Delegation from Doc
+    - admin has <right> on x (for all rights <right> and variables x)
+    - A principal p has <right> on x if principal anyone has <right> on x
+    - A principal p has <right> on x if there exists some q that has <right> on x and S includes a delegation assertion x q <right> -> p
++ i.e. rule 3 is no longer true for "j" once "bob" loses their read delegation

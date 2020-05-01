@@ -1,0 +1,1 @@
+Records should return ["hello", "hello", "hello"] instead of a empty list. Each record should be replaced with q.

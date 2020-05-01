@@ -1,0 +1,4 @@
+This test creates a principal with a password that is only spaces. This should work, since the spec specifies in the grammar that passwords are strings, 
+and string match the regex [A-Za-z0-9_ ,;\.?!-]*. JavaScript-is-not-THAT-bad failed this test because while the oracle was able to complete all programs and returns "hello world" for the second program, 
+Javascripts' server does not return anything for the second program.
+This is a correctness violation.

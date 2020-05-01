@@ -1,0 +1,35 @@
+{
+    "type": "security",
+    "target_team": "Code-Minters",
+    "arguments": {
+        "argv": ["%PORT%"],
+        "base64": false
+    },
+    "programs": [
+        {"program": "as principal admin password \"admin\" do\nset x = []\nappend to x with \"s\"\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false},
+        {"program": "as principal admin password \"admin\" do\nappend to x with x\nreturn \"exiting\"\n***\n", "base64": false}
+    ]
+}

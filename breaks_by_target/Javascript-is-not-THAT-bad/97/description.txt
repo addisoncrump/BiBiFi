@@ -1,0 +1,1 @@
+According to the spec, a parse error (i.e., a failure accordingto the grammar above) anywhere in the program takes precedence over any security violation. 
