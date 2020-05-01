@@ -1,0 +1,4 @@
+as principal bob password "bob_pass" do
+    create principal alice "alice_pass"
+    return "done"
+***

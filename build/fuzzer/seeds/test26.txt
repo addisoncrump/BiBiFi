@@ -1,0 +1,4 @@
+as principal bob password "bob_pass" do
+	append to my_var with "added"
+	return "done"
+***

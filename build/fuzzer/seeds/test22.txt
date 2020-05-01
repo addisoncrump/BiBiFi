@@ -1,0 +1,5 @@
+as principal admin password "admin_pass" do
+	create principal bob "bob_pass"
+	change password bob "bob_new_pass"
+	return "done"
+***
