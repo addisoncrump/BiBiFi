@@ -2,6 +2,9 @@ use crate::Status::{DENIED, FAILED, SUCCESS};
 use serde::Serialize;
 use std::collections::{HashMap, VecDeque};
 
+use bibifi_util::hash;
+
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Database {
     principals: HashMap<String, VPrincipal>,
@@ -12,7 +15,7 @@ pub struct Database {
 #[derive(Clone, PartialEq, Eq, Debug)]
 enum VPrincipal {
     Admin([u8; 32]),
-    Anyone(Principal),
+    Anyone(Principal, [u8; 32]),
     User(Principal, [u8; 32]),
 }
 
@@ -20,7 +23,7 @@ impl ToString for VPrincipal {
     fn to_string(&self) -> String {
         match self {
             VPrincipal::Admin(_) => "admin".to_string(),
-            VPrincipal::Anyone(p) | VPrincipal::User(p, _) => p.to_string(),
+            VPrincipal::Anyone(p, _) | VPrincipal::User(p, _) => p.to_string(),
         }
     }
 }
@@ -80,7 +83,7 @@ impl Database {
         let anyone = VPrincipal::Anyone(Principal {
             name: "anyone".to_string(),
             delegations: Vec::new(),
-        });
+        }, hash("".to_string()));
         principals.insert("anyone".to_string(), anyone.clone());
         Database {
             principals,
@@ -94,7 +97,7 @@ impl Database {
         self.principals
             .get(principal)
             .map(|principal| match *principal {
-                VPrincipal::Anyone(_) => DENIED,
+                VPrincipal::Anyone(_, checked) => DENIED,
                 VPrincipal::User(_, checked) | VPrincipal::Admin(checked) => {
                     if &checked == hash {
                         SUCCESS
@@ -133,7 +136,7 @@ impl Database {
                             }
                             return SUCCESS;
                         }
-                        VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => p.clone(),
+                        VPrincipal::Anyone(ref p, _) | VPrincipal::User(ref p, _) => p.clone(),
                     };
                     if let Target::Variable(variable) = target {
                         if user == "admin"
@@ -163,9 +166,9 @@ impl Database {
                         }
                     }
                     match pdelegated {
-                        VPrincipal::Anyone(_) => self
+                        VPrincipal::Anyone(_, hash) => self
                             .principals
-                            .insert("anyone".to_string(), VPrincipal::Anyone(p)),
+                            .insert("anyone".to_string(), VPrincipal::Anyone(p, hash.clone())),
                         VPrincipal::User(_, hash) => self
                             .principals
                             .insert(p.name.clone(), VPrincipal::User(p, hash.clone())),
@@ -191,8 +194,8 @@ impl Database {
             if self.principals.contains_key(delegator) {
                 if let Some(pdelegated) = self.principals.get(delegated).cloned() {
                     match pdelegated {
-                        VPrincipal::Admin(_) => {}
-                        VPrincipal::Anyone(ref p) | VPrincipal::User(ref p, _) => {
+                        VPrincipal::Admin(_) => {return DENIED;} //break 10 solution
+                        VPrincipal::Anyone(ref p, _) | VPrincipal::User(ref p, _) => {
                             let mut p = p.clone();
                             let delegations = if let Target::Variable(variable) = target {
                                 if user == delegated
@@ -228,9 +231,9 @@ impl Database {
                             };
                             p.delegations.retain(|d| !delegations.contains(d));
                             match pdelegated {
-                                VPrincipal::Anyone(_) => self
+                                VPrincipal::Anyone(_, hash) => self
                                     .principals
-                                    .insert("anyone".to_string(), VPrincipal::Anyone(p)),
+                                    .insert("anyone".to_string(), VPrincipal::Anyone(p, hash.clone())),
                                 VPrincipal::User(_, hash) => self
                                     .principals
                                     .insert(p.name.clone(), VPrincipal::User(p, hash.clone())),
@@ -242,7 +245,7 @@ impl Database {
                 }
             }
         }
-        FAILED
+        FAILED //Break 10 originally went here
     }
 
     #[must_use]
@@ -306,11 +309,11 @@ impl Database {
         if user == "admin" || user == principal {
             if let Some(principal) = self.principals.get_mut(principal) {
                 match principal {
-                    VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) => {
+                    VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) | VPrincipal::Anyone(_, ref mut existing) => {
                         *existing = hash.clone();
                         SUCCESS
                     }
-                    VPrincipal::Anyone(_) => FAILED,
+                    //VPrincipal::Anyone(_) => FAILED, //this it where break 14 happens
                 }
             } else {
                 FAILED
@@ -333,7 +336,7 @@ impl Database {
     fn direct_check_right(&self, target: &String, right: &Right, principal: &VPrincipal) -> bool {
         match principal {
             VPrincipal::Admin(_) => true,
-            VPrincipal::Anyone(p) | VPrincipal::User(p, _) => {
+            VPrincipal::Anyone(p, _) | VPrincipal::User(p, _) => {
                 let mut searched: Vec<&Delegation> = Vec::new();
                 let mut searching: VecDeque<&Delegation> = p
                     .delegations
@@ -348,7 +351,7 @@ impl Database {
                     searched.push(curr);
                     match self.principals.get(&curr.delegator).unwrap() {
                         VPrincipal::Admin(_) => return true,
-                        VPrincipal::Anyone(p) | VPrincipal::User(p, _) => p
+                        VPrincipal::Anyone(p, _) | VPrincipal::User(p, _) => p
                             .delegations
                             .iter()
                             .filter(|d| &d.target == target && &d.right == right)
