@@ -331,7 +331,12 @@ impl Database {
             .principals
             .get(principal)
             .expect("Precondition of principal existence not met.");
+        let anyone_principal = self
+            .principals
+            .get(&"anyone".to_string())
+            .expect("Precondition of principal existence not met.");
         self.direct_check_right(target, right, principal)
+            ||  self.direct_check_right(target, right, anyone_principal)
     }
 
     #[must_use]
