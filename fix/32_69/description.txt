@@ -1,0 +1,4 @@
+Break fixed: 32,69
+Bug: users are not able to access variables shared with 'anyone'
+Issue: when checking for the rights, we are only checking rights delegated user and not to 'anyone'
+Fix: we modified our code such that when checking for the right to a user, we check the delegations both for the user and also 'anyone' in build/database/src/lib.rs at line 334

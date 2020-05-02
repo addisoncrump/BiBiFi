@@ -1,0 +1,5 @@
+Break fixed: 35.
+Bug: user 'bob' is able to access a variable 'y' which he did not have permission to access.
+Issue: when a new variable is created, our design delegates 'all' from admin to the user that created that variable. This is incorrect.
+Break explanation: the break test failed because 'bob' was creating a variable 'x' before trying to access 'y'. So, when the variable 'x' was created, our design delegated 'all' from admin to 'bob' and hence 'bob' was able to access 'y' which he dint have permission to.
+Fix: we modified our code to delegate the variable that has been created and not 'all' during the creation of a variable in build/database/src/lib.rs at line 373

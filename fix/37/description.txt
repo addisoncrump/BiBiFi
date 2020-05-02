@@ -1,0 +1,4 @@
+Break fixed: 37.
+Bug: able to set delegation to local variables
+Issue: not checking if the variable is local or not when setting the delegation
+Fix: we modified our code to check if the variable is present in the set of global variables we have so that we avoid setting delegations for local variables in build/database/src/lib.rs at line 142

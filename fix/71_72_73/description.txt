@@ -1,0 +1,4 @@
+Break fixed: 71,72,73.
+Bug: able to use reserved key words of additional features as variable names
+Issue: when checking if a variable name is a reserved key word or not, we are are only checking for the normal key words and not the key words of the additional features
+Fix: we modified our code to include the keywords of the additional features when checking the variable names in build/parser/src/lib.rs at line 154
