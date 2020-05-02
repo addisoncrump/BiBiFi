@@ -139,7 +139,9 @@ impl Database {
                         VPrincipal::Anyone(ref p, _) | VPrincipal::User(ref p, _) => p.clone(),
                     };
                     if let Target::Variable(variable) = target {
-                        if user == "admin"
+                        if !(self.variables.contains_key(variable)) {
+                            return FAILED;
+                        } else if user == "admin"
                             || self.direct_check_right(variable, &Right::Delegate, &pdelegator)
                         {
                             let delegation = Delegation {
