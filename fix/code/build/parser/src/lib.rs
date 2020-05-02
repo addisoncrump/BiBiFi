@@ -151,7 +151,8 @@ peg::parser! {
         rule keyword() = quiet!{
             "all" / "append" / "as" / "change" / "create" / "default" / "delegation" / "delegator"
                   / "delete" / "do" / "exit" / "foreach" / "in" / "local" / "password" / "principal"
-                  / "read" / "replacewith" / "return" / "set" / "to" / "write" / "***"
+                  / "read" / "replacewith" / "return" / "set" / "to" / "write" / "***" / "split"
+                  / "concat" / "tolower" / "notequal" / "equal"/ "filtereach" / "with" / "let"
         }
     }
 }
