@@ -370,7 +370,7 @@ impl Database {
             for right in &[Right::Read, Right::Write, Right::Append, Right::Delegate] {
                 match self.delegate(
                     &"admin".to_string(),
-                    &Target::All,
+                    &Target::Variable(variable.to_string()),
                     &"admin".to_string(),
                     right,
                     user,
