@@ -1,0 +1,1 @@
+According to the spec, the 'tab' characters should be rejected as FAILED since they are not supported, but, in the test case, where there is a tab in the beginning of the program, the test runs normally without throwing the "FAILED" error.

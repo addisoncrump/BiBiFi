@@ -1,0 +1,1 @@
+According to the spec, each command’s JSON output includes the key "status" which indicates the status code of each <prim_cmd>, return, or exit. The value of "status" is a string constant dependent on the result of executing the command. The oracle shows the correct status codes for each command while the DUT does not.

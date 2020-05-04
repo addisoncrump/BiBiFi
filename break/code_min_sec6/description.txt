@@ -1,0 +1,3 @@
+According to the "set delegation" section in the spec, a non-admin principal can only set the delegation if they have delegate permission over the variable.
+
+But in the test case where bob does not have delegate permission over "x" tries to delegate permissions, the server runs successfully instead of returning "DENIED". This is hence a security violation according to the break it spec.

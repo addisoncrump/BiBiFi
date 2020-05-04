@@ -1,0 +1,3 @@
+According to the "delete delegation" section in the spec, delegation assertion should be revoked with that command. In the current test case, bob gets read permission from the default delegator alice when bob was created.
+
+But admin revokes the read permission of alice through "delete delegation" command which should have revoked the read permission of bob also. But, when bob as current principal tries to return "x", then server is returning the value of "x" instead of returning "DENIED". This is hence a security violation according to the break it spec.
