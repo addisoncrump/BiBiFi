@@ -4,7 +4,6 @@ use std::collections::{HashMap, VecDeque};
 
 use bibifi_util::hash;
 
-
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Database {
     principals: HashMap<String, VPrincipal>,
@@ -15,7 +14,7 @@ pub struct Database {
 #[derive(Clone, PartialEq, Eq, Debug)]
 enum VPrincipal {
     Admin([u8; 32]),
-    Anyone(Principal, [u8; 32]),
+    Anyone(Principal, Option<[u8; 32]>), // break 14 fix, ctd
     User(Principal, [u8; 32]),
 }
 
@@ -80,10 +79,13 @@ impl Database {
     pub fn new(admin_hash: [u8; 32]) -> Database {
         let mut principals = HashMap::new();
         principals.insert("admin".to_string(), VPrincipal::Admin(admin_hash));
-        let anyone = VPrincipal::Anyone(Principal {
-            name: "anyone".to_string(),
-            delegations: Vec::new(),
-        }, hash("".to_string()));
+        let anyone = VPrincipal::Anyone(
+            Principal {
+                name: "anyone".to_string(),
+                delegations: Vec::new(),
+            },
+            None,
+        );
         principals.insert("anyone".to_string(), anyone.clone());
         Database {
             principals,
@@ -196,7 +198,9 @@ impl Database {
             if self.principals.contains_key(delegator) {
                 if let Some(pdelegated) = self.principals.get(delegated).cloned() {
                     match pdelegated {
-                        VPrincipal::Admin(_) => {return DENIED;} //break 10 solution
+                        VPrincipal::Admin(_) => {
+                            return DENIED;
+                        } //break 10 solution
                         VPrincipal::Anyone(ref p, _) | VPrincipal::User(ref p, _) => {
                             let mut p = p.clone();
                             let delegations = if let Target::Variable(variable) = target {
@@ -233,9 +237,10 @@ impl Database {
                             };
                             p.delegations.retain(|d| !delegations.contains(d));
                             match pdelegated {
-                                VPrincipal::Anyone(_, hash) => self
-                                    .principals
-                                    .insert("anyone".to_string(), VPrincipal::Anyone(p, hash.clone())),
+                                VPrincipal::Anyone(_, hash) => self.principals.insert(
+                                    "anyone".to_string(),
+                                    VPrincipal::Anyone(p, hash.clone()),
+                                ),
                                 VPrincipal::User(_, hash) => self
                                     .principals
                                     .insert(p.name.clone(), VPrincipal::User(p, hash.clone())),
@@ -311,11 +316,16 @@ impl Database {
         if user == "admin" || user == principal {
             if let Some(principal) = self.principals.get_mut(principal) {
                 match principal {
-                    VPrincipal::User(_, ref mut existing) | VPrincipal::Admin(ref mut existing) | VPrincipal::Anyone(_, ref mut existing) => {
+                    VPrincipal::User(_, ref mut existing)
+                    | VPrincipal::Admin(ref mut existing)
+                    | VPrincipal::Anyone(_, Some(ref mut existing)) => {
                         *existing = hash.clone();
                         SUCCESS
+                    } //VPrincipal::Anyone(_) => FAILED, //this it where break 14 happens
+                    VPrincipal::Anyone(_, option) => {
+                        *option = Some(hash.clone());
+                        SUCCESS
                     }
-                    //VPrincipal::Anyone(_) => FAILED, //this it where break 14 happens
                 }
             } else {
                 FAILED
@@ -336,7 +346,7 @@ impl Database {
             .get(&"anyone".to_string())
             .expect("Precondition of principal existence not met.");
         self.direct_check_right(target, right, principal)
-            ||  self.direct_check_right(target, right, anyone_principal)
+            || self.direct_check_right(target, right, anyone_principal)
     }
 
     #[must_use]
