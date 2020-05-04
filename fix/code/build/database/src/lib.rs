@@ -99,14 +99,16 @@ impl Database {
         self.principals
             .get(principal)
             .map(|principal| match *principal {
-                VPrincipal::Anyone(_, checked) => DENIED,
-                VPrincipal::User(_, checked) | VPrincipal::Admin(checked) => {
+                VPrincipal::User(_, checked)
+                | VPrincipal::Admin(checked)
+                | VPrincipal::Anyone(_, Some(checked)) => {
                     if &checked == hash {
                         SUCCESS
                     } else {
                         DENIED
                     }
                 }
+                _ => DENIED,
             })
             .unwrap_or(FAILED)
     }
