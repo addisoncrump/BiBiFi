@@ -1,0 +1,7 @@
+Break fixed: 24
+Bug: Test args do not return 255 for incorrect arguments (e.g., hexadecimal numbers)
+Issue: N/A
+Fix: None applicable; bug is not correct. When tested manually, the program behaves correctly for given test input (returns 255).
+This can be tested with `cargo run --release -- 0x189C; echo $?` or `cargo build --release; ./target/release/bibifi 0x189C; echo $?`.
+I have provided a fix.json for this bug, but it should be scratched from the record and no points lost as it is invalid.
+Commit hash used is for fix start.

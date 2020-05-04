@@ -1,4 +1,4 @@
-#[forbid(unused_must_use)]
+#![forbid(unused_must_use)]
 //This code was modified from code posted by Reddit user u/nsossonko
 //at https://www.reddit.com/r/rust/comments/e82v07/my_introduction_to_tokio_streaming/
 use bibifi_runtime::status::Status::EXITING;
